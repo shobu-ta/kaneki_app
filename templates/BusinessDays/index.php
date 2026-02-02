@@ -1,59 +1,43 @@
 <?php
 /**
  * @var \App\View\AppView $this
- * @var iterable<\App\Model\Entity\BusinessDay> $businessDays
+ * @var \Cake\Datasource\EntityInterface[]|\Cake\Collection\CollectionInterface $businessDays
  */
 ?>
-<div class="businessDays index content">
-    <?= $this->Html->link(__('New Business Day'), ['action' => 'add'], ['class' => 'button float-right']) ?>
-    <h3><?= __('Business Days') ?></h3>
-    <div class="table-responsive">
-        <table>
-            <thead>
-                <tr>
-                    <th><?= $this->Paginator->sort('id') ?></th>
-                    <th><?= $this->Paginator->sort('business_date') ?></th>
-                    <th><?= $this->Paginator->sort('order_deadline') ?></th>
-                    <th><?= $this->Paginator->sort('is_active') ?></th>
-                    <th><?= $this->Paginator->sort('created') ?></th>
-                    <th><?= $this->Paginator->sort('modified') ?></th>
-                    <th class="actions"><?= __('Actions') ?></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($businessDays as $businessDay): ?>
-                <tr>
-                    <td><?= $this->Number->format($businessDay->id) ?></td>
-                    <td><?= h($businessDay->business_date) ?></td>
-                    <td><?= h($businessDay->order_deadline) ?></td>
-                    <td><?= h($businessDay->is_active) ?></td>
-                    <td><?= h($businessDay->created) ?></td>
-                    <td><?= h($businessDay->modified) ?></td>
-                    <td class="actions">
-                        <?= $this->Html->link(__('View'), ['action' => 'view', $businessDay->id]) ?>
-                        <?= $this->Html->link(__('Edit'), ['action' => 'edit', $businessDay->id]) ?>
-                        <?= $this->Form->postLink(
-                            __('Delete'),
-                            ['action' => 'delete', $businessDay->id],
-                            [
-                                'method' => 'delete',
-                                'confirm' => __('Are you sure you want to delete # {0}?', $businessDay->id),
-                            ]
-                        ) ?>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-    <div class="paginator">
-        <ul class="pagination">
-            <?= $this->Paginator->first('<< ' . __('first')) ?>
-            <?= $this->Paginator->prev('< ' . __('previous')) ?>
-            <?= $this->Paginator->numbers() ?>
-            <?= $this->Paginator->next(__('next') . ' >') ?>
-            <?= $this->Paginator->last(__('last') . ' >>') ?>
-        </ul>
-        <p><?= $this->Paginator->counter(__('Page {{page}} of {{pages}}, showing {{current}} record(s) out of {{count}} total')) ?></p>
-    </div>
-</div>
+<h1>営業日一覧</h1>
+
+<table border="1" cellpadding="5" cellspacing="0">
+    <thead>
+        <tr>
+            <th>営業日</th>
+            <th>予約締切</th>
+            <th>受付状態</th>
+            <th>メニュー一覧</th>
+            <th>詳細ページ</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach ($businessDays as $day) : ?>
+            <?php
+            // 受付状態判定
+            $now = date('Y-m-d H:i:s');
+            $status = ($day->order_deadline < $now) ? '受付終了' : '受付中';
+            ?>
+            <tr>
+                <td><?= h($day->business_date->format('Y-m-d')) ?></td>
+                <td><?= h($day->order_deadline->format('Y-m-d H:i')) ?></td>
+                <td><?= h($status) ?></td>
+                <td>
+                    <ul>
+                        <?php foreach ($day->products as $product) : ?>
+                            <li><?= h($product->name) ?> - <?= h(number_format($product->price)) ?>円</li>
+                        <?php endforeach; ?>
+                    </ul>
+                </td>
+                <td>
+                    <a href="<?= $this->Url->build(['action' => 'view', $day->id]) ?>">詳細・予約へ</a>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>

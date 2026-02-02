@@ -17,8 +17,10 @@ class BusinessDaysController extends AppController
      */
     public function index()
     {
-        $query = $this->BusinessDays->find();
-        $businessDays = $this->paginate($query);
+        $businessDays = $this->BusinessDays->find('all')
+            ->contain(['Products'])
+            ->where(['BusinessDays.is_active' => true])
+            ->orderBy(['business_date' => 'ASC']);
 
         $this->set(compact('businessDays'));
     }

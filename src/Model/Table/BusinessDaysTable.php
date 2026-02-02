@@ -50,6 +50,7 @@ class BusinessDaysTable extends Table
 
         $this->hasMany('Products', [
             'foreignKey' => 'business_day_id',
+            'dependent' => true,
         ]);
         $this->hasMany('Reservations', [
             'foreignKey' => 'business_day_id',
