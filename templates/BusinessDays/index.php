@@ -21,7 +21,7 @@
             <?php
             // 受付状態判定
             $now = date('Y-m-d H:i:s');
-            $status = ($day->order_deadline < $now) ? '受付終了' : '受付中';
+            $status = $day->order_deadline < $now ? '受付終了' : '受付中';
             ?>
             <tr>
                 <td><?= h($day->business_date->format('Y-m-d')) ?></td>

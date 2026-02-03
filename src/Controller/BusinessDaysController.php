@@ -34,7 +34,9 @@ class BusinessDaysController extends AppController
      */
     public function view($id = null)
     {
-        $businessDay = $this->BusinessDays->get($id, contain: ['Products', 'Reservations']);
+        $businessDay = $this->BusinessDays->get($id, [
+            'contain' => ['Products'],
+        ]);
         $this->set(compact('businessDay'));
     }
 
