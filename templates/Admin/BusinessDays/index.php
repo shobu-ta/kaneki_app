@@ -28,6 +28,7 @@
             </td>
             <td>
                 <?= $this->Html->link('編集', ['action' => 'edit', $day->id]) ?>
+                
             </td>
         </tr>
         <?php endforeach; ?>

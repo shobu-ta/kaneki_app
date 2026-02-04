@@ -71,13 +71,13 @@ class ProductsTable extends Table
     {
         $validator
             ->integer('business_day_id')
+            ->requirePresence('business_day_id', 'create')
             ->notEmptyString('business_day_id');
 
         $validator
-            ->scalar('name')
-            ->maxLength('name', 255)
-            ->requirePresence('name', 'create')
-            ->notEmptyString('name');
+            ->integer('product_master_id')
+            ->requirePresence('product_master_id', 'create')
+            ->notEmptyString('product_master_id');
 
         $validator
             ->integer('price')
