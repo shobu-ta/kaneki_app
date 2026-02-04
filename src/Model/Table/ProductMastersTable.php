@@ -69,7 +69,8 @@ class ProductMastersTable extends Table
         $validator
             ->integer('base_price')
             ->requirePresence('base_price', 'create')
-            ->notEmptyString('base_price');
+            ->notEmptyString('base_price')
+            ->greaterThanOrEqual('base_price', 0);
 
         $validator
             ->boolean('is_active')
