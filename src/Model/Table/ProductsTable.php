@@ -47,7 +47,11 @@ class ProductsTable extends Table
         $this->setPrimaryKey('id');
 
         $this->addBehavior('Timestamp');
-
+        
+        $this->belongsTo('ProductMasters', [
+        'foreignKey' => 'product_master_id',
+        'joinType' => 'INNER',
+        ]);
         $this->belongsTo('BusinessDays', [
             'foreignKey' => 'business_day_id',
             'joinType' => 'INNER',
