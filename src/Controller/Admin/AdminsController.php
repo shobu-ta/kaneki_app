@@ -13,6 +13,85 @@ use App\Controller\AppController;
 class AdminsController extends AppController
 {
     /**
+     * Initialize method
+     *
+     * @return void
+     */
+    public function initialize(): void
+    {
+        parent::initialize();
+
+       
+    }
+
+    public function beforeFilter(\Cake\Event\EventInterface $event): void
+    {
+    parent::beforeFilter($event);
+    // Configure the login action to not require authentication, preventing
+    // the infinite redirect loop issue
+    $this->Authentication->addUnauthenticatedActions(['login']);
+    }
+
+    /**
+     * Login method
+     *
+     * @return \Cake\Http\Response|null|void Redirects on successful login, renders view otherwise.
+     */
+    public function login()
+    
+    {
+        $this->request->allowMethod(['get', 'post']);
+
+        
+        $result = $this->Authentication->getResult();
+        
+        
+      
+             
+
+
+
+        if ($result && $result->isValid()) {
+            // ログイン成功時
+            $redirect = $this->request->getQuery('redirect', [
+                'prefix' => 'Admin',
+                'controller' => 'Dashboards',
+                'action' => 'index',
+            ]);
+
+            return $this->redirect($redirect);
+        }
+
+        if ($this->request->is('post') && !$result->isValid()) {
+            $this->Flash->error('メールアドレスまたはパスワードが正しくありません');
+        }
+    }
+
+        /**
+     * Logout method
+     *
+     * @return \Cake\Http\Response|null
+     */
+    public function logout()
+    {
+        // 認証結果を取得
+        $result = $this->Authentication->getResult();
+
+        // ログイン済みの場合のみログアウト
+        if ($result && $result->isValid()) {
+            $this->Authentication->logout();
+        }
+
+        // ログイン画面にリダイレクト
+        return $this->redirect([
+            'prefix' => 'Admin',
+            'controller' => 'Admins',
+            'action' => 'login',
+        ]);
+    }
+
+
+    /**
      * Index method
      *
      * @return \Cake\Http\Response|null|void Renders view

@@ -93,4 +93,13 @@ return function (RouteBuilder $routes): void {
      * });
      * ```
      */
+
+    $routes->prefix('Admin', function (RouteBuilder $builder): void {
+        $builder->connect(
+            '/admins/login',
+            ['controller' => 'Admins', 'action' => 'login']
+        );
+
+        $builder->fallbacks();
+    });
 };
