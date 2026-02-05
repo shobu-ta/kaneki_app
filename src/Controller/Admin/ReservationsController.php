@@ -20,12 +20,13 @@ class ReservationsController extends AppController
     public function index()
     {
         $query = $this->Reservations->find()
-            ->contain(['BusinessDays', 'Products']);
+            ->contain(['BusinessDays'])
+            ->orderBy(['Reservations.created' => 'DESC']);
+
         $reservations = $this->paginate($query);
 
         $this->set(compact('reservations'));
     }
-
     /**
      * View method
      *
@@ -35,10 +36,15 @@ class ReservationsController extends AppController
      */
     public function view($id = null)
     {
-        $reservation = $this->Reservations->get($id, contain: ['BusinessDays', 'Products', 'ReservationItems']);
+        $reservation = $this->Reservations->get($id, [
+            'contain' => [
+                'BusinessDays',
+                'ReservationItems',
+            ],
+        ]);
+
         $this->set(compact('reservation'));
     }
-
     /**
      * Add method
      *
@@ -104,4 +110,23 @@ class ReservationsController extends AppController
 
         return $this->redirect(['action' => 'index']);
     }
+
+    public function toggleStatus($id = null)
+    {
+        $this->request->allowMethod(['post']);
+
+        $reservation = $this->Reservations->get($id);
+
+        $next = ($reservation->status === 'canceled') ? 'reserved' : 'canceled';
+        $reservation->status = $next;
+
+        if ($this->Reservations->save($reservation)) {
+            $this->Flash->success('ステータスを更新しました：' . $next);
+        } else {
+            $this->Flash->error('ステータス更新に失敗しました');
+        }
+
+        return $this->redirect(['action' => 'view', $id]);
+    }
+
 }

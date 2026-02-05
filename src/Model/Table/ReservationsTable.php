@@ -81,7 +81,8 @@ class ReservationsTable extends Table
         $validator
             ->scalar('status')
             ->maxLength('status', 20)
-            ->notEmptyString('status');
+            ->notEmptyString('status')
+            ->inList('status', ['reserved', 'canceled'], 'ステータスが不正です。');
 
         $validator
             ->scalar('customer_name')
