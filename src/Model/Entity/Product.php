@@ -41,5 +41,6 @@ class Product extends Entity
         'modified' => true,
         'business_day' => true,
         'reservation_items' => true,
+        'product_master_id' => true,
     ];
 }

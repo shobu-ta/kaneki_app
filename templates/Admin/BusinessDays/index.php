@@ -15,6 +15,7 @@
             <th>予約締切</th>
             <th>状態</th>
             <th>操作</th>
+            <th>出品管理</th>
         </tr>
     </thead>
     <tbody>
@@ -30,6 +31,7 @@
                 <?= $this->Html->link('編集', ['action' => 'edit', $day->id]) ?>
                 
             </td>
+            <td><?= $this->Html->link('出品管理',['controller' => 'Products', 'action' => 'index', $day->id])?></td>
         </tr>
         <?php endforeach; ?>
     </tbody>

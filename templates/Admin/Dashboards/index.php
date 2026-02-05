@@ -10,7 +10,7 @@
     <li>
         <?= $this->Html->link(
             '商品管理',
-            ['controller' => 'Products', 'action' => 'index']
+            ['controller' => 'ProductMasters', 'action' => 'index']
         ) ?>
     </li>
     <li>

@@ -63,8 +63,10 @@ class ProductsController extends AppController
         }
 
         $productMasters = $this->Products->ProductMasters
-            ->find('list')
-            ->where(['is_active' => true]);
+            ->find()
+            ->where(['ProductMasters.is_active' => true])
+            ->order(['ProductMasters.id' => 'ASC'])
+            ->all();
 
         $this->set(compact('product', 'productMasters', 'businessDayId'));
     }
