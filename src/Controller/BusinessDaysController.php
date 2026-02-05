@@ -11,6 +11,19 @@ namespace App\Controller;
 class BusinessDaysController extends AppController
 {
     /**
+     * Initialize method
+     *
+     * @return void
+     */
+    public function initialize(): void
+    {
+        parent::initialize();
+
+        // 客側はログイン不要
+        $this->Authentication->allowUnauthenticated(['index', 'view']);
+    }
+
+    /**
      * Index method
      *
      * @return \Cake\Http\Response|null|void Renders view
@@ -18,7 +31,7 @@ class BusinessDaysController extends AppController
     public function index()
     {
         $businessDays = $this->BusinessDays->find('all')
-            ->contain(['Products'])
+            ->contain(['Products.ProductMasters'])
             ->where(['BusinessDays.is_active' => true])
             ->orderBy(['business_date' => 'ASC']);
 
@@ -35,11 +48,19 @@ class BusinessDaysController extends AppController
     public function view($id = null)
     {
         $businessDay = $this->BusinessDays->get($id, [
-            'contain' => ['Products'],
+            'contain' => [
+                'Products' => function ($q) {
+                    return $q->where(['Products.is_active' => true])
+                            ->contain(['ProductMasters'])
+                            ->order(['Products.id' => 'ASC']);
+                }
+            ]
         ]);
-        $this->set(compact('businessDay'));
-    }
 
+        $isClosed = $businessDay->order_deadline < new \DateTimeImmutable();
+
+        $this->set(compact('businessDay', 'isClosed'));
+    }
     /**
      * Add method
      *

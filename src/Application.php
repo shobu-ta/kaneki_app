@@ -128,33 +128,26 @@ class Application extends BaseApplication
 
    public function getAuthenticationService(ServerRequestInterface $request): AuthenticationServiceInterface
 {
-     $service = new AuthenticationService([
-        'unauthenticatedRedirect' => Router::url([
-            'prefix' => 'Admin',
-            'controller' => 'Admins',
-            'action' => 'login',
-        ]),
+    $path = $request->getUri()->getPath();
+
+    // /kaneki/admin/... のようにサブディレクトリの場合もあるので「/admin」を含むかで判定
+    $isAdmin = (strpos($path, '/admin') !== false);
+
+    $service = new AuthenticationService([
+        'unauthenticatedRedirect' => $isAdmin
+            ? Router::url(['prefix' => 'Admin', 'controller' => 'Admins', 'action' => 'login'])
+            : null,
         'queryParam' => 'redirect',
     ]);
 
-    // Load the authenticators, you want session first
     $service->loadAuthenticator('Authentication.Session');
-    // Configure form data check to pick email and password
+
     $service->loadAuthenticator('Authentication.Form', [
         'fields' => [
             'username' => 'email',
             'password' => 'password',
         ],
-        
-          'loginUrl' => Router::url([
-            'prefix' => 'Admin',
-            'controller' => 'Admins',
-            'action' => 'login',
-             ]),
-
-
-
-        
+        'loginUrl' => Router::url(['prefix' => 'Admin', 'controller' => 'Admins', 'action' => 'login']),
         'identifier' => [
             'Authentication.Password' => [
                 'fields' => [
@@ -171,6 +164,7 @@ class Application extends BaseApplication
 
     return $service;
 }
+
 
 
 }
