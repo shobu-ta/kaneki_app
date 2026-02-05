@@ -99,6 +99,10 @@ return function (RouteBuilder $routes): void {
             '/admins/login',
             ['controller' => 'Admins', 'action' => 'login']
         );
+        $builder->connect(
+        '/reservations/products-for-business-day',
+        ['controller' => 'Reservations', 'action' => 'productsForBusinessDay']
+        );
 
         $builder->fallbacks();
     });

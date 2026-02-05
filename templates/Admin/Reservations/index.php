@@ -1,3 +1,8 @@
+<p>
+  <?= $this->Html->link('＋ Instagram予約を追加', ['action' => 'add']) ?>
+</p>
+
+
 <h1>予約一覧</h1>
 
 <table border="1" cellpadding="5">
