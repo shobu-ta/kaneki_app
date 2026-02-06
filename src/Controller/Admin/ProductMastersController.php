@@ -19,7 +19,7 @@ class ProductMastersController extends AppController
     {
         $productMasters = $this->paginate(
             $this->ProductMasters->find()
-                ->order(['id' => 'DESC'])
+                ->orderBy(['id' => 'DESC'])
         );
 
         $this->set(compact('productMasters'));
@@ -70,25 +70,25 @@ class ProductMastersController extends AppController
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
     public function edit($id)
-{
-    $productMaster = $this->ProductMasters->get($id);
+    {
+        $productMaster = $this->ProductMasters->get($id);
 
-    if ($this->request->is(['patch', 'post', 'put'])) {
-        $productMaster = $this->ProductMasters->patchEntity(
-            $productMaster,
-            $this->request->getData()
-        );
+        if ($this->request->is(['patch', 'post', 'put'])) {
+            $productMaster = $this->ProductMasters->patchEntity(
+                $productMaster,
+                $this->request->getData()
+            );
 
-        if ($this->ProductMasters->save($productMaster)) {
-            $this->Flash->success('商品を更新しました');
-            return $this->redirect(['action' => 'index']);
+            if ($this->ProductMasters->save($productMaster)) {
+                $this->Flash->success('商品を更新しました');
+                return $this->redirect(['action' => 'index']);
+            }
+
+            $this->Flash->error('更新に失敗しました');
         }
 
-        $this->Flash->error('更新に失敗しました');
+        $this->set(compact('productMaster'));
     }
-
-    $this->set(compact('productMaster'));
-}
 
 
     /**
@@ -100,7 +100,6 @@ class ProductMastersController extends AppController
      */
     public function delete($id = null)
     {
-        
         $this->request->allowMethod(['post', 'delete']);
 
         $productMaster = $this->ProductMasters->get($id);

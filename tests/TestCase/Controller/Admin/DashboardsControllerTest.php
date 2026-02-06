@@ -21,9 +21,7 @@ class DashboardsControllerTest extends TestCase
      *
      * @var array<string>
      */
-    protected array $fixtures = [
-        'app.Dashboards',
-    ];
+   
 
     /**
      * Test index method

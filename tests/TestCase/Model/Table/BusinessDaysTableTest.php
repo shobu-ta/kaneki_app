@@ -25,6 +25,7 @@ class BusinessDaysTableTest extends TestCase
      */
     protected array $fixtures = [
         'app.BusinessDays',
+        'app.ProductMasters',
         'app.Products',
         'app.Reservations',
     ];

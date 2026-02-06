@@ -21,6 +21,7 @@ class ProductsFixture extends TestFixture
             [
                 'id' => 1,
                 'business_day_id' => 1,
+                'product_master_id' => 1,
                 'name' => 'Lorem ipsum dolor sit amet',
                 'price' => 1,
                 'max_quantity' => 1,

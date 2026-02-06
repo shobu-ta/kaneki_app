@@ -45,6 +45,10 @@
                     '編集',
                     ['action' => 'edit', $product->id]
                 ) ?>
+                <?= $this->Form->postLink(
+                    '出品取り下げ',
+                    ['action' => 'delete', $product->id],
+                ) ?>
             </td>
         </tr>
         <?php endforeach; ?>

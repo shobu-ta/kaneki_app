@@ -118,8 +118,12 @@ class ProductsController extends AppController
     {
         $this->request->allowMethod(['post', 'delete']);
         $product = $this->Products->get($id);
+
+        // ★ index に戻すために必要
+        $businessDayId = $product->business_day_id;
+
         if ($this->Products->delete($product)) {
-            $this->Flash->success(__('The product has been deleted.'));
+            $this->Flash->success(__('出品を取り下げました'));
         } else {
             $this->Flash->error(__('The product could not be deleted. Please, try again.'));
         }
