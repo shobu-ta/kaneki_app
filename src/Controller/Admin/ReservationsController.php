@@ -46,6 +46,84 @@ class ReservationsController extends AppController
 
         $this->set(compact('reservation'));
     }
+
+    //URLで渡される予約ID（例：/admin/reservations/update-items/4 の 4）を受け取る
+    public function updateItems($id = null)
+    {
+        $this->request->allowMethod(['post']);
+
+        $reservation = $this->Reservations->get($id, [
+            'contain' => ['ReservationItems'],
+        ]);
+
+        $qtyMap = (array)$this->request->getData('qty'); // フォームから送られてきた数量の配列を受け取る　例：qty[12]=3（明細ID12の数量を3にする）
+        $deleteMap = (array)$this->request->getData('delete'); //フォームから送られてきた削除チェックの配列を受け取る　例：delete[12]=1（明細ID12を削除する）
+
+        $reservationItems = $this->fetchTable('ReservationItems');//ReservationItemsTable を取得して、明細を更新/削除できるようにする
+
+        $conn = $this->Reservations->getConnection();//DB接続（コネクション）を取得
+        $conn->begin();//トランザクション開始　ここから先で失敗したら rollback() で全部なかったことにできる
+
+        try {
+            // ここから「成功させたい処理」を書くブロック（失敗したら catch に行く）
+            $items = $reservationItems->find()//この予約に紐づく明細を DBから改めて取り直す　画面に表示されていたものが古い/改ざんされた等を避ける意図もある
+                ->where(['reservation_id' => $reservation->id])
+                ->all();
+
+            $newTotal = 0;//新しい合計金額をここに足していくため、最初は0
+            $remainCount = 0;//明細が何行残ったか数える（全部削除されたか判断するため）
+
+            foreach ($items as $item) { //予約の明細1行ずつ処理するループ開始
+                $itemId = (int)$item->id; //明細行のIDを数値にして変数へ
+
+                // その明細行に「削除チェック」が付いていたらDBから削除してこの明細の処理はここで終了（continue で次の明細へ）
+                if (!empty($deleteMap[$itemId])) {
+                    $reservationItems->delete($item);
+                    continue;
+                }
+
+                // 数量がフォームから送られてきたならそれを使う　送られてきてなければ、今の数量をそのまま使う（現状維持）
+                $newQty = isset($qtyMap[$itemId]) ? (int)$qtyMap[$itemId] : (int)$item->quantity;
+
+                // 数量が0以下なら「削除扱い」にして行を消す そして次の明細へ（UIが簡単になる設計）
+                if ($newQty <= 0) {
+                    $reservationItems->delete($item);
+                    continue;
+                }
+
+                $item->quantity = $newQty; //明細行の数量を新しい数量に更新
+                //DBに保存できたかチェック　失敗なら例外を投げて catch に飛ばす（トランザクションをロールバックするため
+                if (!$reservationItems->save($item)) {
+                    throw new \RuntimeException('明細の更新に失敗しました');
+                }
+
+                $remainCount++; //この明細は残ったので、残数を1増やす
+                $newTotal += ((int)$item->price_at_order) * $newQty; //明細の小計（単価×数量）を合計に足し込む price_at_order は「注文時価格」なので、後から価格が変わっても履歴が保てる
+            }
+
+            // 明細が0行なら予約をキャンセル扱いにする　合計は0にする　明細が残っていれば計算した合計金額に更新する
+            if ($remainCount === 0) {
+                $reservation->status = 'canceled';
+                $reservation->total_price = 0;
+            } else {
+                $reservation->total_price = $newTotal;
+            }
+            //合計金額やステータス変更を reservations に保存 失敗なら例外→catchへ
+            if (!$this->Reservations->save($reservation)) {
+                throw new \RuntimeException('予約の更新に失敗しました');
+            }
+            //ここまで成功したので、トランザクションを確定（DBに正式反映
+            $conn->commit();
+
+            $this->Flash->success('予約内容を更新しました');
+            return $this->redirect(['action' => 'view', $reservation->id]);
+        //途中で何か失敗したらここに来る（save失敗・delete失敗・例外など全部）
+        } catch (\Throwable $e) {
+            $conn->rollback();//トランザクション中の変更を全部取り消す（明細更新だけ反映、などが起きない）
+            $this->Flash->error('更新に失敗しました');
+            return $this->redirect(['action' => 'view', $reservation->id]);
+        }
+    }
     /**
      * Add method
      *

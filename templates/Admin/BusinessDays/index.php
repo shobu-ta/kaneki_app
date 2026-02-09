@@ -1,11 +1,48 @@
 <h1>営業日管理</h1>
 
+<?php $this->Paginator->setTemplates([]); ?>
+
 <p>
     <?= $this->Html->link(
         '＋ 新規営業日追加',
         ['action' => 'add']
     ) ?>
 </p>
+
+<?php
+$currentYear = (int)date('Y');
+$years = [];
+for ($y = $currentYear - 1; $y <= $currentYear + 2; $y++) {
+    $years[$y] = $y;
+}
+$months = [];
+for ($m = 1; $m <= 12; $m++) {
+    $months[$m] = $m;
+}
+?>
+
+<?= $this->Form->create(null, ['type' => 'get']) ?>
+  <?= $this->Form->control('year', [
+      'label' => '年',
+      'type' => 'select',
+      'options' => $years,
+      'empty' => '選択',
+      'value' => $year ?: null,
+  ]) ?>
+
+  <?= $this->Form->control('month', [
+      'label' => '月',
+      'type' => 'select',
+      'options' => $months,
+      'empty' => '選択',
+      'value' => $month ?: null,
+  ]) ?>
+
+  <?= $this->Form->button('絞り込む') ?>
+
+  <?= $this->Html->link('リセット', ['action' => 'index'], ['style' => 'margin-left:10px;']) ?>
+<?= $this->Form->end() ?>
+
 
 <table border="1" cellpadding="5">
     <thead>
@@ -36,3 +73,9 @@
         <?php endforeach; ?>
     </tbody>
 </table>
+
+<div style="margin-top:15px;">
+  <?= $this->Paginator->prev('« 前へ') ?>
+  <?= $this->Paginator->numbers() ?>
+  <?= $this->Paginator->next('次へ »') ?>
+</div>

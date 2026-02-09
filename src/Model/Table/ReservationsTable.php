@@ -55,9 +55,7 @@ class ReservationsTable extends Table
         $this->hasMany('ReservationItems', [
             'foreignKey' => 'reservation_id',
         ]);
-        $this->belongsTo('Products', [
-        'foreignKey' => 'product_id',
-        ]);
+        
     }
 
     /**

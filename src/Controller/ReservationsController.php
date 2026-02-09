@@ -49,6 +49,9 @@ class ReservationsController extends AppController
         $this->set(compact('reservation'));
     }
 
+
+    
+
     /**
      * Add method
      *

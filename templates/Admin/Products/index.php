@@ -48,6 +48,7 @@
                 <?= $this->Form->postLink(
                     '出品取り下げ',
                     ['action' => 'delete', $product->id],
+                    ['confirm' => 'この出品を取り下げます。よろしいですか？']
                 ) ?>
             </td>
         </tr>

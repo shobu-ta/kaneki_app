@@ -19,12 +19,43 @@ class BusinessDaysController extends AppController
      */
     public function index()
     {
-        $businessDays = $this->BusinessDays
-        ->find()
-        ->order(['business_date' => 'DESC']);
+        $year = (int)$this->request->getQuery('year');
+        $month = (int)$this->request->getQuery('month');
 
-        $this->set(compact('businessDays'));
+        $query = $this->BusinessDays->find()
+            ->orderBy(['business_date' => 'DESC']);
+
+        // 年・月が指定されていれば絞り込み
+        if ($year > 0 && $month >= 1 && $month <= 12) {
+            $start = sprintf('%04d-%02d-01', $year, $month);
+            $end = (new \DateTimeImmutable($start))->modify('first day of next month')->format('Y-m-d');
+
+            $query->where([
+                'BusinessDays.business_date >=' => $start,
+                'BusinessDays.business_date <'  => $end,
+            ]);
+        } elseif ($year > 0) {
+            // 年だけ指定されている場合
+            $start = sprintf('%04d-01-01', $year);
+            $end = sprintf('%04d-01-01', $year + 1);
+
+            $query->where([
+                'BusinessDays.business_date >=' => $start,
+                'BusinessDays.business_date <'  => $end,
+            ]);
+        }
+
+        // 20件ずつページネーション
+        $this->paginate = [
+            'limit' => 20,
+        ];
+
+        $businessDays = $this->paginate($query);
+
+        // フォーム用：現在の選択値をテンプレに渡す
+        $this->set(compact('businessDays', 'year', 'month'));
     }
+
     
 
     /**

@@ -82,6 +82,20 @@ class ProductsController extends AppController
     {
         $product = $this->Products->get($id);
 
+        $reservationItems = $this->fetchTable('ReservationItems');
+
+        // ★この出品が予約に含まれている件数（予約明細の行数）
+        $reservedItemCount = $reservationItems->find()
+            ->where(['ReservationItems.product_id' => $product->id])
+            ->count();
+
+        // ★この出品が含まれる予約件数（予約IDのユニーク数）
+        $reservedReservationCount = $reservationItems->find()
+            ->select(['reservation_id'])
+            ->where(['ReservationItems.product_id' => $product->id])
+            ->distinct(['reservation_id'])
+            ->count();
+
         if ($this->request->is(['patch', 'post', 'put'])) {
             $product = $this->Products->patchEntity(
                 $product,
@@ -92,7 +106,7 @@ class ProductsController extends AppController
                 $this->Flash->success('出品内容を更新しました');
                 return $this->redirect([
                     'action' => 'index',
-                    $product->business_day_id
+                    $product->business_day_id,
                 ]);
             }
 
@@ -103,7 +117,7 @@ class ProductsController extends AppController
             ->find('list')
             ->where(['is_active' => true]);
 
-        $this->set(compact('product', 'productMasters'));
+        $this->set(compact('product', 'productMasters', 'reservedReservationCount', 'reservedItemCount'));
     }
 
 
@@ -117,6 +131,7 @@ class ProductsController extends AppController
     public function delete($id = null)
     {
         $this->request->allowMethod(['post', 'delete']);
+
         $product = $this->Products->get($id);
 
         // ★ index に戻すために必要
@@ -128,6 +143,6 @@ class ProductsController extends AppController
             $this->Flash->error(__('The product could not be deleted. Please, try again.'));
         }
 
-        return $this->redirect(['action' => 'index']);
+        return $this->redirect(['action' => 'index', $businessDayId]);
     }
 }

@@ -23,7 +23,6 @@ class BusinessDaysControllerTest extends TestCase
      */
     protected array $fixtures = [
         'app.BusinessDays',
-        
         'app.Reservations',
     ];
 

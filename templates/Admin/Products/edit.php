@@ -1,5 +1,19 @@
 <h1>出品商品編集</h1>
 
+<?php if ($reservedReservationCount > 0): ?>
+  <div style="border:1px solid #f0ad4e; padding:10px; margin-bottom:15px;">
+    <strong>注意：</strong>
+    この出品は既に予約に含まれています。<br>
+    予約件数：<?= (int)$reservedReservationCount ?> 件
+    （明細行数：<?= (int)$reservedItemCount ?> 行）<br>
+    <br>
+    <strong>重要：</strong>
+    予約済みの金額は <code>reservation_items.price_at_order</code> が使われるため、
+    ここで価格を変更しても「過去の予約金額」は変わりません。<br>
+    ただし、管理上の表示や想定価格と齟齬が出る可能性があります。
+  </div>
+<?php endif; ?>
+
 <?= $this->Form->create($product) ?>
 
 <fieldset>
