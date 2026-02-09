@@ -3,13 +3,13 @@
 <ul>
     <li>
         <?= $this->Html->link(
-            '営業日管理',
+            '営業日管理➡出品管理',
             ['controller' => 'BusinessDays', 'action' => 'index']
         ) ?>
     </li>
     <li>
         <?= $this->Html->link(
-            '商品管理',
+            '商品マスタ管理',
             ['controller' => 'ProductMasters', 'action' => 'index']
         ) ?>
     </li>

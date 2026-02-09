@@ -1,4 +1,4 @@
-<h1>営業日管理</h1>
+<h1>営業日管理➡出品管理</h1>
 
 <?php $this->Paginator->setTemplates([]); ?>
 
