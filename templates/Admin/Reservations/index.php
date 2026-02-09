@@ -2,6 +2,54 @@
   <?= $this->Html->link('＋ Instagram予約を追加', ['action' => 'add']) ?>
 </p>
 
+<?php
+$year = $year ?? null;
+$month = $month ?? null;
+$businessDayId = $businessDayId ?? null;
+$businessDayOptions = $businessDayOptions ?? [];
+?>
+
+
+<?php
+$currentYear = (int)date('Y');
+$years = [];
+for ($y = $currentYear - 1; $y <= $currentYear + 2; $y++) {
+    $years[$y] = $y;
+}
+$months = [];
+for ($m = 1; $m <= 12; $m++) {
+    $months[$m] = $m;
+}
+?>
+
+<?= $this->Form->create(null, ['type' => 'get']) ?>
+  <?= $this->Form->control('year', [
+      'label' => '年',
+      'type' => 'select',
+      'options' => $years,
+      'empty' => '選択',
+      'value' => $year ?: null,
+  ]) ?>
+
+  <?= $this->Form->control('month', [
+      'label' => '月',
+      'type' => 'select',
+      'options' => $months,
+      'empty' => '選択',
+      'value' => $month ?: null,
+  ]) ?>
+
+  <?= $this->Form->control('business_day_id', [
+      'label' => '営業日',
+      'type' => 'select',
+      'options' => $businessDayOptions,
+      'empty' => '（年月で絞った営業日）',
+      'value' => $businessDayId ?: null,
+  ]) ?>
+
+  <?= $this->Form->button('絞り込む') ?>
+  <?= $this->Html->link('リセット', ['action' => 'index'], ['style' => 'margin-left:10px;']) ?>
+<?= $this->Form->end() ?>
 
 <h1>予約一覧</h1>
 
@@ -41,6 +89,12 @@
         <?php endforeach; ?>
     </tbody>
 </table>
+
+<div style="margin-top:15px;">
+  <?= $this->Paginator->prev('« 前へ') ?>
+  <?= $this->Paginator->numbers() ?>
+  <?= $this->Paginator->next('次へ »') ?>
+</div>
 
 <p>
 <?= $this->Html->link(

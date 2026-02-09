@@ -20,14 +20,78 @@ class ReservationsController extends AppController
      */
     public function index()
     {
+        $year = (int)$this->request->getQuery('year');
+        $month = (int)$this->request->getQuery('month');
+        $businessDayId = (int)$this->request->getQuery('business_day_id');
+
+        // まず営業日候補（ドロップダウン用）を作る
+        $businessDaysTable = $this->fetchTable('BusinessDays');
+
+        $bdQuery = $businessDaysTable->find()
+            ->select(['id', 'business_date'])
+            ->orderBy(['business_date' => 'DESC']);
+
+        // 年月が指定されていれば、その月の営業日だけ候補にする
+        if ($year > 0 && $month >= 1 && $month <= 12) {
+            $start = sprintf('%04d-%02d-01', $year, $month);
+            $end = (new \DateTimeImmutable($start))->modify('first day of next month')->format('Y-m-d');
+
+            $bdQuery->where([
+                'BusinessDays.business_date >=' => $start,
+                'BusinessDays.business_date <' => $end,
+            ]);
+        } elseif ($year > 0) {
+            $start = sprintf('%04d-01-01', $year);
+            $end = sprintf('%04d-01-01', $year + 1);
+
+            $bdQuery->where([
+                'BusinessDays.business_date >=' => $start,
+                'BusinessDays.business_date <'  => $end,
+            ]);
+        }
+
+        $businessDays = $bdQuery->all();
+
+        // select用 options（例：id => '2026/02/28'）
+        $businessDayOptions = [];
+        foreach ($businessDays as $bd) {
+            $businessDayOptions[$bd->id] = $bd->business_date->i18nFormat('yyyy/MM/dd');
+        }
+
+        // 次に予約一覧クエリ
         $query = $this->Reservations->find()
             ->contain(['BusinessDays'])
-            ->orderBy(['Reservations.created' => 'DESC']);
+            ->order(['Reservations.id' => 'DESC']);
 
+        // 営業日で絞る（年月で候補を絞って、さらに任意で1日選べる）
+        if ($businessDayId > 0) {
+            $query->where(['Reservations.business_day_id' => $businessDayId]);
+        } else {
+            // business_day_id未指定で、年月だけ指定されている場合は
+            // その年月の営業日に該当する予約に絞る
+            if (!empty($businessDayOptions)) {
+                $query->where(['Reservations.business_day_id IN' => array_keys($businessDayOptions)]);
+            } elseif ($year > 0 || $month > 0) {
+                // 年月を入れたけど営業日が0件なら、予約も0件にする
+                $query->where(['1 = 0']);
+            }
+        }
+
+        // 30件ページネーション
+        $this->paginate = [
+            'limit' => 30,
+        ];
         $reservations = $this->paginate($query);
 
-        $this->set(compact('reservations'));
+        $this->set(compact(
+            'reservations',
+            'year',
+            'month',
+            'businessDayId',
+            'businessDayOptions'
+        ));
     }
+
     /**
      * View method
      *
