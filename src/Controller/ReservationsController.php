@@ -132,7 +132,7 @@ class ReservationsController extends AppController
         $this->request->allowMethod(['post']);
 
         $businessDayId = (int)$this->request->getData('business_day_id');
-        $qty = (array)$this->request->getData('qty');
+        $qty = (array)$this->request->getData('quantity');
 
         // 数量が1以上のものだけ抽出
         $items = [];

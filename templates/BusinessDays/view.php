@@ -4,24 +4,29 @@
 <?php if ($isClosed) : ?>
   <p>この営業日は受付終了です。</p>
 <?php else: ?>
-    <?= $this->Form->create(null, ['url' => ['controller' => 'Reservations', 'action' => 'start']]) ?>
+    <?= $this->Form->create(null, ['url' => ['controller' => 'Reservations', 'action' => 'start', $businessDay->id]]) ?>
     <?= $this->Form->hidden('business_day_id', ['value' => $businessDay->id]) ?>
 
-  <table border="1" cellpadding="5">
-    <tr>
-      <th>商品</th><th>価格</th><th>数量</th>
-    </tr>
+<?php
+$grouped = [];
+foreach ($businessDay->products as $p) {
+    $g = $p->product_master->genre ?? 'そのほか';
+    $grouped[$g][] = $p;
+}
+?>
 
-    <?php foreach ($businessDay->products as $p) : ?>
-      <tr>
-        <td><?= h($p->product_master->name) ?></td>
-        <td><?= number_format($p->price) ?>円</td>
-        <td>
-          <input type="number" name="qty[<?= (int)$p->id ?>]" min="0" value="0">
-        </td>
-      </tr>
-    <?php endforeach; ?>
-  </table>
+<?php foreach ($grouped as $genre => $products): ?>
+  <h3><?= h($genre) ?></h3>
+
+  <?php foreach ($products as $p): ?>
+    <div>
+      <?= h($p->product_master->name) ?>
+      （<?= number_format($p->price) ?>円）
+      数量：<input type="number" name="quantity[<?= (int)$p->id ?>]" min="0" value="0">
+    </div>
+  <?php endforeach; ?>
+<?php endforeach; ?>
+
 
   <button type="submit">次へ</button>
     <?= $this->Form->end() ?>

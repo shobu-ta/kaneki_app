@@ -19,10 +19,11 @@ class ProductMastersController extends AppController
     {
         $productMasters = $this->paginate(
             $this->ProductMasters->find()
+                ->orderBy(['genre' => 'ASC', 'name' => 'ASC'])
                 ->orderBy(['id' => 'DESC'])
         );
-
-        $this->set(compact('productMasters'));
+        $genres = \App\Model\Table\ProductMastersTable::GENRES;
+        $this->set(compact('productMasters', 'genres'));
     }
 
     /**
@@ -44,6 +45,13 @@ class ProductMastersController extends AppController
     {
         $productMaster = $this->ProductMasters->newEmptyEntity();
 
+        $genres = [
+        '蒸しパン' => '蒸しパン',
+        'シフォンケーキ' => 'シフォンケーキ',
+        'パウンドケーキ' => 'パウンドケーキ',
+        'そのほか' => 'そのほか',
+        ];
+
         if ($this->request->is('post')) {
             $productMaster = $this->ProductMasters->patchEntity(
                 $productMaster,
@@ -58,7 +66,7 @@ class ProductMastersController extends AppController
             $this->Flash->error('登録に失敗しました');
         }
 
-        $this->set(compact('productMaster'));
+        $this->set(compact('productMaster', 'genres'));
     }
 
 
@@ -72,6 +80,13 @@ class ProductMastersController extends AppController
     public function edit($id)
     {
         $productMaster = $this->ProductMasters->get($id);
+
+        $genres = [
+        '蒸しパン' => '蒸しパン',
+        'シフォンケーキ' => 'シフォンケーキ',
+        'パウンドケーキ' => 'パウンドケーキ',
+        'そのほか' => 'そのほか',
+        ];
 
         if ($this->request->is(['patch', 'post', 'put'])) {
             $productMaster = $this->ProductMasters->patchEntity(
@@ -87,7 +102,7 @@ class ProductMastersController extends AppController
             $this->Flash->error('更新に失敗しました');
         }
 
-        $this->set(compact('productMaster'));
+        $this->set(compact('productMaster', 'genres'));
     }
 
 

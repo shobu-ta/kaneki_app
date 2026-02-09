@@ -52,6 +52,14 @@ class ProductMastersTable extends Table
         ]);
     }
 
+    public const GENRES = [
+    '蒸しパン' => '蒸しパン',
+    'シフォンケーキ' => 'シフォンケーキ',
+    'パウンドケーキ' => 'パウンドケーキ',
+    'そのほか' => 'そのほか',
+    ];
+
+
     /**
      * Default validation rules.
      *
@@ -75,6 +83,13 @@ class ProductMastersTable extends Table
         $validator
             ->boolean('is_active')
             ->notEmptyString('is_active');
+
+        $validator
+            ->scalar('genre')
+            ->maxLength('genre', 50)
+            ->requirePresence('genre', 'create')
+            ->notEmptyString('genre')
+            ->inList('genre', array_keys(self::GENRES), 'ジャンルが不正です。');
 
         return $validator;
     }

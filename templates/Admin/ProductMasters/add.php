@@ -16,6 +16,14 @@
         'required' => true,
     ]) ?>
 
+    <?= $this->Form->control('genre', [
+    'label' => 'ジャンル',
+    'type' => 'select',
+    'options' => $genres,
+    'empty' => false,
+    ]) ?>
+
+
     <?= $this->Form->control('base_price', [
         'label' => '基本価格',
         'type' => 'number',

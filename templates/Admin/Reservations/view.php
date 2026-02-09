@@ -33,7 +33,7 @@
     <?php endforeach; ?>
   </tbody>
 </table>
-
+合計：<?= number_format($reservation->total_price) ?> 円
 <p>
   <?= $this->Form->button('明細を更新する', [
       'confirm' => '数量変更／削除を反映します。よろしいですか？',

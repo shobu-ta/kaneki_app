@@ -30,6 +30,7 @@ class ProductMaster extends Entity
      */
     protected array $_accessible = [
         'name' => true,
+        'genre' => true,
         'base_price' => true,
         'is_active' => true,
         'created' => true,
