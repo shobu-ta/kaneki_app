@@ -3,44 +3,94 @@
  * @var \App\View\AppView $this
  * @var \Cake\Datasource\EntityInterface[]|\Cake\Collection\CollectionInterface $businessDays
  */
-?>
-<h1>営業日一覧</h1>
 
-<table border="1" cellpadding="5" cellspacing="0">
-    <thead>
-        <tr>
-            <th>営業日</th>
-            <th>予約締切</th>
-            <th>受付状態</th>
-            <th>メニュー一覧</th>
-            <th>詳細ページ</th>
-        </tr>
+$now = new \DateTimeImmutable();
+?>
+
+<h1 class="mb-3">営業日一覧</h1>
+
+<div class="table-responsive">
+  <table class="table table-striped table-bordered align-middle">
+    <thead class="table-light">
+      <tr>
+        <th style="min-width: 140px;">営業日</th>
+        <th style="min-width: 170px;">予約締切</th>
+        <th style="min-width: 130px;">受付状態</th>
+        <th style="min-width: 280px;">メニュー一覧</th>
+        <th style="min-width: 140px;">詳細</th>
+      </tr>
     </thead>
+
     <tbody>
-        <?php foreach ($businessDays as $day) : ?>
-            <?php
-            // 受付状態判定
-            $now = date('Y-m-d H:i:s');
-            $status = $day->order_deadline < $now ? '受付終了' : '受付中';
-            ?>
-            <tr>
-                <td><?= h($day->business_date->format('Y-m-d')) ?></td>
-                <td><?= h($day->order_deadline->format('Y-m-d H:i')) ?></td>
-                <td><?= h($status) ?></td>
-                <td>
-                    <ul>
-                        <?php foreach ($day->products as $product) : ?>
-                            <li>
-                            <?= h($product->product_master->name ?? '商品名なし') ?>
-                            - <?= h(number_format((int)$product->price)) ?>円
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                </td>
-                <td>
-                    <a href="<?= $this->Url->build(['action' => 'view', $day->id]) ?>">詳細・予約へ</a>
-                </td>
-            </tr>
-        <?php endforeach; ?>
+      <?php foreach ($businessDays as $day): ?>
+        <?php
+          $deadline = $day->order_deadline instanceof \DateTimeInterface
+            ? \DateTimeImmutable::createFromInterface($day->order_deadline)
+            : new \DateTimeImmutable((string)$day->order_deadline);
+
+          $isClosed = $deadline < $now;
+
+          // まもなく締切（例：締切まで24時間以内）
+          $isSoon = !$isClosed && ($deadline->getTimestamp() - $now->getTimestamp() <= 24 * 60 * 60);
+
+          // 表示用（例：2026/02/10(火)）
+          $bizDate = $day->business_date;
+          $bizLabel = $bizDate ? $bizDate->format('Y/m/d') . ' (' . ['日','月','火','水','木','金','土'][(int)$bizDate->format('w')] . ')' : '';
+        ?>
+
+        <tr class="<?= $isClosed ? 'table-secondary' : '' ?>">
+          <td>
+            <strong><?= h($bizLabel) ?></strong>
+          </td>
+
+          <td>
+            <div><?= h($deadline->format('Y/m/d H:i')) ?></div>
+            <?php if ($isSoon): ?>
+              <div><span class="badge text-bg-warning">まもなく締切</span></div>
+            <?php endif; ?>
+          </td>
+
+          <td>
+            <?php if ($isClosed): ?>
+              <span class="badge text-bg-secondary">受付終了</span>
+            <?php else: ?>
+              <span class="badge text-bg-success">受付中</span>
+            <?php endif; ?>
+          </td>
+
+          <td class="small">
+            <?php if (!empty($day->products)): ?>
+              <ul class="list-unstyled mb-0">
+                <?php foreach ($day->products as $product): ?>
+                  <li class="mb-1">
+                    <span class="fw-semibold">
+                      <?= h($product->product_master->name ?? '商品名なし') ?>
+                    </span>
+                    <span class="text-muted">-</span>
+                    <?= h(number_format((int)$product->price)) ?>円
+                    <?php if ($product->max_quantity !== null): ?>
+                      <span class="text-muted">(上限 <?= (int)$product->max_quantity ?>)</span>
+                    <?php endif; ?>
+                  </li>
+                <?php endforeach; ?>
+              </ul>
+            <?php else: ?>
+              <span class="text-muted">出品がありません</span>
+            <?php endif; ?>
+          </td>
+
+          <td>
+            <?php if ($isClosed): ?>
+              <button class="btn btn-sm btn-secondary" disabled>受付終了</button>
+            <?php else: ?>
+              <a class="btn btn-sm btn-primary"
+                 href="<?= $this->Url->build(['action' => 'view', $day->id]) ?>">
+                詳細・予約へ
+              </a>
+            <?php endif; ?>
+          </td>
+        </tr>
+      <?php endforeach; ?>
     </tbody>
-</table>
+  </table>
+</div>

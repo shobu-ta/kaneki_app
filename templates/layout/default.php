@@ -19,6 +19,7 @@ $cakeDescription = 'CakePHP: the rapid development php framework';
 <!DOCTYPE html>
 <html>
 <head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <?= $this->Html->charset() ?>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>
@@ -27,13 +28,15 @@ $cakeDescription = 'CakePHP: the rapid development php framework';
     </title>
     <?= $this->Html->meta('icon') ?>
 
-    <?= $this->Html->css(['normalize.min', 'milligram.min', 'fonts', 'cake']) ?>
+    <?= $this->Html->css(['normalize.min']) ?>
 
     <?= $this->fetch('meta') ?>
     <?= $this->fetch('css') ?>
     <?= $this->fetch('script') ?>
 
     <style>
+    body { padding-top: 0; }
+    body.is-admin { padding-top: 72px; } 
     .admin-top-menu {
         display: flex;
         gap: 12px;
@@ -52,27 +55,27 @@ $cakeDescription = 'CakePHP: the rapid development php framework';
     </style>
 
 </head>
-<body>
-    <nav class="top-nav">
-        <div class="top-nav-title">
-            <?php
-            $isAdminPrefix = $this->request->getParam('prefix') === 'Admin';
-            $isLoggedIn = (bool)$this->request->getAttribute('identity');
+<?php
+$isAdminPrefix = $this->request->getParam('prefix') === 'Admin';
+$isLoggedIn = (bool)$this->request->getAttribute('identity');
+?>
 
-            if ($isAdminPrefix && $isLoggedIn) {
-                echo $this->element('admin_top_menu');
-            }
-            ?>
+<body class="<?= $isAdminPrefix ? 'is-admin' : '' ?>">
+  <?php if ($isAdminPrefix && $isLoggedIn) : ?>
+    <?= $this->element('admin_top_menu') ?>
+  <?php endif; ?>
 
-        </div>
-    </nav>
-    <main class="main">
-        <div class="container">
-            <?= $this->Flash->render() ?>
-            <?= $this->fetch('content') ?>
-        </div>
-    </main>
-    <footer>
-    </footer>
+  <?php $containerClass = $isAdminPrefix ? 'container-fluid' : 'container'; ?>
+
+  <main class="main py-3">
+    <div class="<?= $containerClass ?>">
+      <?= $this->Flash->render() ?>
+      <?= $this->fetch('content') ?>
+    </div>
+  </main>
+
+  <footer></footer>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

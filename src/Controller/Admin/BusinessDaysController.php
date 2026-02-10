@@ -163,4 +163,25 @@ class BusinessDaysController extends AppController
 
         return $this->redirect(['action' => 'index']);
     }
+
+    /**
+     * Toggle active status method
+     */
+    public function toggle($id = null)
+    {
+        $this->request->allowMethod(['post']);
+
+        $day = $this->BusinessDays->get($id);
+
+        $day->is_active = !$day->is_active;
+
+        if ($this->BusinessDays->save($day)) {
+            $this->Flash->success('状態を更新しました');
+        } else {
+            $this->Flash->error('更新に失敗しました');
+        }
+
+        return $this->redirect($this->referer());
+    }
+
 }

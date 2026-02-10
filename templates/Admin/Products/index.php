@@ -1,64 +1,80 @@
-<h1>出品管理</h1>
+<h1 class="mb-3">出品管理</h1>
 
-<p>
-<?= $this->Html->link(
+<!-- 上部：追加ボタンだけ -->
+<div class="mb-3">
+  <?= $this->Html->link(
     '＋ 出品商品追加',
-    ['action' => 'add', $businessDayId]
-) ?>
-</p>
+    ['action' => 'add', $businessDayId],
+    ['class' => 'btn btn-primary']
+  ) ?>
+</div>
 
-<table border="1" cellpadding="5">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>商品名</th>
-            <th>価格</th>
-            <th>数量上限</th>
-            <th>状態</th>
-            <th>操作</th>
-        </tr>
+<!-- 中央：表 -->
+<div class="table-responsive">
+  <table class="table table-striped table-bordered align-middle">
+    <thead class="table-light">
+      <tr>
+        <th style="width: 80px;">ID</th>
+        <th style="min-width: 220px;">商品名</th>
+        <th style="width: 140px;">価格</th>
+        <th style="width: 140px;">数量上限</th>
+        <th style="width: 110px;">状態</th>
+        <th style="width: 210px;">操作</th>
+      </tr>
     </thead>
 
     <tbody>
-        <?php foreach ($products as $product) : ?>
-        <tr>
-            <td><?= $product->id ?></td>
+      <?php foreach ($products as $product) : ?>
+        <tr class="<?= $product->is_active ? '' : 'table-secondary' ?>">
+          <td><?= (int)$product->id ?></td>
 
-            <td>
-                <?= h($product->product_master->name) ?>
-            </td>
+          <td>
+            <div class="fw-semibold"><?= h($product->product_master->name) ?></div>
+          </td>
 
-            <td>
-                <?= number_format($product->price) ?> 円
-            </td>
+          <td><?= number_format((int)$product->price) ?> 円</td>
 
-            <td>
-                <?= $product->max_quantity ?? '無制限' ?>
-            </td>
+          <td>
+            <?= $product->max_quantity !== null ? (int)$product->max_quantity : '無制限' ?>
+          </td>
 
-            <td>
-                <?= $product->is_active ? '表示' : '非表示' ?>
-            </td>
+          <td>
+            <?php if ($product->is_active): ?>
+              <span class="badge text-bg-success">表示</span>
+            <?php else: ?>
+              <span class="badge text-bg-secondary">非表示</span>
+            <?php endif; ?>
+          </td>
 
-            <td>
-                <?= $this->Html->link(
-                    '編集',
-                    ['action' => 'edit', $product->id]
-                ) ?>
-                <?= $this->Form->postLink(
-                    '出品取り下げ',
-                    ['action' => 'delete', $product->id],
-                    ['confirm' => 'この出品を取り下げます。よろしいですか？']
-                ) ?>
-            </td>
+          <td>
+            <div class="d-flex flex-wrap gap-2">
+              <?= $this->Html->link(
+                '編集',
+                ['action' => 'edit', $product->id],
+                ['class' => 'btn btn-sm btn-outline-primary']
+              ) ?>
+
+              <?= $this->Form->postLink(
+                '出品取り下げ',
+                ['action' => 'delete', $product->id],
+                [
+                  'confirm' => 'この出品を取り下げます。よろしいですか？',
+                  'class' => 'btn btn-sm btn-outline-danger'
+                ]
+              ) ?>
+            </div>
+          </td>
         </tr>
-        <?php endforeach; ?>
+      <?php endforeach; ?>
     </tbody>
-</table>
+  </table>
+</div>
 
-<p>
-<?= $this->Html->link(
-    '営業日一覧へ戻る',
-    ['controller' => 'BusinessDays', 'action' => 'index']
-) ?>
-</p>
+<!-- 下部：戻る -->
+<div class="mt-3">
+  <?= $this->Html->link(
+    '← 営業日一覧へ戻る',
+    ['controller' => 'BusinessDays', 'action' => 'index'],
+    ['class' => 'btn btn-outline-secondary']
+  ) ?>
+</div>
