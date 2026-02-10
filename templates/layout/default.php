@@ -32,15 +32,38 @@ $cakeDescription = 'CakePHP: the rapid development php framework';
     <?= $this->fetch('meta') ?>
     <?= $this->fetch('css') ?>
     <?= $this->fetch('script') ?>
+
+    <style>
+    .admin-top-menu {
+        display: flex;
+        gap: 12px;
+        padding: 10px 16px;
+        background: #1f2937;
+    }
+    .admin-top-menu a {
+        color: #fff;
+        text-decoration: none;
+        padding: 6px 10px;
+        border-radius: 4px;
+    }
+    .admin-top-menu a:hover {
+        background: #374151;
+    }
+    </style>
+
 </head>
 <body>
     <nav class="top-nav">
         <div class="top-nav-title">
-            <a href="<?= $this->Url->build('/') ?>"><span>Cake</span>PHP</a>
-        </div>
-        <div class="top-nav-links">
-            <a target="_blank" rel="noopener" href="https://book.cakephp.org/5/">Documentation</a>
-            <a target="_blank" rel="noopener" href="https://api.cakephp.org/">API</a>
+            <?php
+            $isAdminPrefix = $this->request->getParam('prefix') === 'Admin';
+            $isLoggedIn = (bool)$this->request->getAttribute('identity');
+
+            if ($isAdminPrefix && $isLoggedIn) {
+                echo $this->element('admin_top_menu');
+            }
+            ?>
+
         </div>
     </nav>
     <main class="main">

@@ -30,7 +30,10 @@
                 <td>
                     <ul>
                         <?php foreach ($day->products as $product) : ?>
-                            <li><?= h($product->name) ?> - <?= h(number_format($product->price)) ?>円</li>
+                            <li>
+                            <?= h($product->product_master->name ?? '商品名なし') ?>
+                            - <?= h(number_format((int)$product->price)) ?>円
+                            </li>
                         <?php endforeach; ?>
                     </ul>
                 </td>

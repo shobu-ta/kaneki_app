@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Controller\AppController;
+use App\Model\Table\ProductMastersTable;
+use Cake\Database\Exception\QueryException;
 
 /**
  * ProductMasters Controller (Admin)
@@ -22,19 +24,9 @@ class ProductMastersController extends AppController
                 ->orderBy(['genre' => 'ASC', 'name' => 'ASC'])
                 ->orderBy(['id' => 'DESC'])
         );
-        $genres = \App\Model\Table\ProductMastersTable::GENRES;
+        $genres = ProductMastersTable::GENRES;
         $this->set(compact('productMasters', 'genres'));
     }
-
-    /**
-     * View method
-     *
-     * @param string|null $id Admin/product Master id.
-     * @return \Cake\Http\Response|null|void Renders view
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-   
-
 
     /**
      * Add method
@@ -44,13 +36,7 @@ class ProductMastersController extends AppController
     public function add()
     {
         $productMaster = $this->ProductMasters->newEmptyEntity();
-
-        $genres = [
-        '蒸しパン' => '蒸しパン',
-        'シフォンケーキ' => 'シフォンケーキ',
-        'パウンドケーキ' => 'パウンドケーキ',
-        'そのほか' => 'そのほか',
-        ];
+        $genres = ProductMastersTable::GENRES;
 
         if ($this->request->is('post')) {
             $productMaster = $this->ProductMasters->patchEntity(
@@ -60,6 +46,7 @@ class ProductMastersController extends AppController
 
             if ($this->ProductMasters->save($productMaster)) {
                 $this->Flash->success('商品を登録しました');
+
                 return $this->redirect(['action' => 'index']);
             }
 
@@ -68,7 +55,6 @@ class ProductMastersController extends AppController
 
         $this->set(compact('productMaster', 'genres'));
     }
-
 
     /**
      * Edit method
@@ -80,13 +66,7 @@ class ProductMastersController extends AppController
     public function edit($id)
     {
         $productMaster = $this->ProductMasters->get($id);
-
-        $genres = [
-        '蒸しパン' => '蒸しパン',
-        'シフォンケーキ' => 'シフォンケーキ',
-        'パウンドケーキ' => 'パウンドケーキ',
-        'そのほか' => 'そのほか',
-        ];
+        $genres = ProductMastersTable::GENRES;
 
         if ($this->request->is(['patch', 'post', 'put'])) {
             $productMaster = $this->ProductMasters->patchEntity(
@@ -96,6 +76,7 @@ class ProductMastersController extends AppController
 
             if ($this->ProductMasters->save($productMaster)) {
                 $this->Flash->success('商品を更新しました');
+
                 return $this->redirect(['action' => 'index']);
             }
 
@@ -104,7 +85,6 @@ class ProductMastersController extends AppController
 
         $this->set(compact('productMaster', 'genres'));
     }
-
 
     /**
      * Delete method
@@ -119,18 +99,26 @@ class ProductMastersController extends AppController
 
         $productMaster = $this->ProductMasters->get($id);
 
-        if ($this->ProductMasters->delete($productMaster)) {
-            $this->Flash->success('商品マスタを削除しました。');
-        } else {
-            $this->Flash->error('商品マスタの削除に失敗しました。');
+        $hasProducts = $this->ProductMasters->Products->exists([
+            'product_master_id' => (int)$id,
+        ]);
+
+        if ($hasProducts) {
+            $this->Flash->error('この商品は出品商品に紐づいているため削除することができません。');
+
+            return $this->redirect(['action' => 'index']);
+        }
+
+        try {
+            if ($this->ProductMasters->delete($productMaster)) {
+                $this->Flash->success('商品マスタを削除しました。');
+            } else {
+                $this->Flash->error('商品マスタの削除に失敗しました。');
+            }
+        } catch (QueryException $e) {
+            $this->Flash->error('この商品は出品商品に紐づいているため削除することができません。');
         }
 
         return $this->redirect(['action' => 'index']);
     }
-
-    
-
-
-
-
 }

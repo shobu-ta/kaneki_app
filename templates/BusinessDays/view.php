@@ -7,25 +7,25 @@
     <?= $this->Form->create(null, ['url' => ['controller' => 'Reservations', 'action' => 'start', $businessDay->id]]) ?>
     <?= $this->Form->hidden('business_day_id', ['value' => $businessDay->id]) ?>
 
-<?php
-$grouped = [];
-foreach ($businessDay->products as $p) {
-    $g = $p->product_master->genre ?? 'そのほか';
-    $grouped[$g][] = $p;
-}
-?>
+    <?php
+    $grouped = [];
+    foreach ($businessDay->products as $p) {
+        $g = $p->product_master->genre ?? 'そのほか';
+        $grouped[$g][] = $p;
+    }
+    ?>
 
-<?php foreach ($grouped as $genre => $products): ?>
-  <h3><?= h($genre) ?></h3>
+    <?php foreach ($grouped as $genre => $products): ?>
+      <h3><?= h($genre) ?></h3>
 
-  <?php foreach ($products as $p): ?>
-    <div>
-      <?= h($p->product_master->name) ?>
-      （<?= number_format($p->price) ?>円）
-      数量：<input type="number" name="quantity[<?= (int)$p->id ?>]" min="0" value="0">
-    </div>
-  <?php endforeach; ?>
-<?php endforeach; ?>
+      <?php foreach ($products as $p): ?>
+        <div>
+          <?= h($p->product_master->name) ?>
+          （<?= number_format($p->price) ?>円）
+          数量：<input type="number" name="quantity[<?= (int)$p->id ?>]" min="0" value="0">
+        </div>
+      <?php endforeach; ?>
+    <?php endforeach; ?>
 
 
   <button type="submit">次へ</button>
