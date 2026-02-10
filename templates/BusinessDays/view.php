@@ -1,9 +1,7 @@
 <h1>営業日：<?= h($businessDay->business_date->format('Y-m-d')) ?></h1>
 <p>予約締切：<?= h($businessDay->order_deadline->format('Y-m-d H:i')) ?></p>
 
-<?php if ($isClosed) : ?>
-  <p>この営業日は受付終了です。</p>
-<?php else: ?>
+
     <?= $this->Form->create(null, ['url' => ['controller' => 'Reservations', 'action' => 'start', $businessDay->id]]) ?>
     <?= $this->Form->hidden('business_day_id', ['value' => $businessDay->id]) ?>
 
@@ -28,6 +26,6 @@
     <?php endforeach; ?>
 
 
-  <button type="submit">次へ</button>
-    <?= $this->Form->end() ?>
-<?php endif; ?>
+    <button type="submit">次へ</button>
+  <?= $this->Form->end() ?>
+

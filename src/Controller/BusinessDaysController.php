@@ -56,10 +56,13 @@ class BusinessDaysController extends AppController
                 }
             ]
         ]);
+        if ($businessDay->order_deadline < new \DateTimeImmutable()) {
+            $this->Flash->error('予約受付は終了いたしました。ご予約をご希望のお客様は、恐れ入りますがInstagramのメッセージ、または「admin@gmail.com」までお問い合わせください。');
 
-        $isClosed = $businessDay->order_deadline < new \DateTimeImmutable();
+            return $this->redirect(['action' => 'index']);
+        }
 
-        $this->set(compact('businessDay', 'isClosed'));
+        $this->set(compact('businessDay'));
     }
     /**
      * Add method

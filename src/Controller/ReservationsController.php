@@ -60,6 +60,17 @@ class ReservationsController extends AppController
     public function add()
     {
         $session = $this->request->getSession();
+        $businessDayId = (int)$session->read('Reservation.business_day_id');
+        if ($businessDayId <= 0) {
+            $this->Flash->error('営業日を選択してください。');
+            return $this->redirect(['controller' => 'BusinessDays', 'action' => 'index']);
+        }
+
+        $redirect = $this->redirectIfClosed($businessDayId);
+        if ($redirect) {
+            return $redirect;
+        }
+
         if (!$session->check('Reservation.items')) {
             $this->Flash->error('商品選択からやり直してください。');
             return $this->redirect(['controller' => 'BusinessDays', 'action' => 'index']);
@@ -160,6 +171,10 @@ class ReservationsController extends AppController
         $session = $this->request->getSession();
         $items = (array)$session->read('Reservation.items');
         $businessDayId = (int)$session->read('Reservation.business_day_id');
+        $redirect = $this->redirectIfClosed($businessDayId);
+        if ($redirect) {
+            return $redirect;
+        }
         $customer = (array)$session->read('Reservation.customer');
 
         if (empty($items) || empty($customer)) {
@@ -215,12 +230,10 @@ class ReservationsController extends AppController
         $items = (array)$session->read('Reservation.items');
         $businessDayId = (int)$session->read('Reservation.business_day_id');
         $customer = (array)$session->read('Reservation.customer');
-
         if (empty($items) || empty($customer)) {
             $this->Flash->error('セッションが切れました。最初からやり直してください。');
             return $this->redirect(['controller' => 'BusinessDays', 'action' => 'index']);
         }
-
         // 営業日締切チェック（改ざん対策で再確認）
         $businessDay = $this->fetchTable('BusinessDays')->get($businessDayId);
         if ($businessDay->order_deadline < new \DateTimeImmutable()) {
@@ -317,6 +330,35 @@ class ReservationsController extends AppController
 
     public function done()
     {
+    }
+
+    private function reservationClosedMessage(): string
+    {
+        return '予約受付は終了いたしました。ご予約をご希望のお客様は、恐れ入りますがInstagramのメッセージ、または「admin@gmail.com」までお問い合わせください。';
+    }
+
+    private function isDeadlinePassed(int $businessDayId): bool
+    {
+        $businessDay = $this->fetchTable('BusinessDays')->find()
+            ->select(['id', 'order_deadline'])
+            ->where(['id' => $businessDayId])
+            ->first();
+
+        if (!$businessDay) {
+            return true; // 不正な営業日IDは通さない
+        }
+
+        return $businessDay->order_deadline < new \DateTimeImmutable();
+    }
+
+    private function redirectIfClosed(int $businessDayId)
+    {
+        if ($this->isDeadlinePassed($businessDayId)) {
+            $this->Flash->error($this->reservationClosedMessage());
+            return $this->redirect(['controller' => 'BusinessDays', 'action' => 'index']);
+        }
+
+        return null;
     }
 
 
