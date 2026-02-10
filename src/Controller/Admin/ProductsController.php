@@ -23,8 +23,9 @@ class ProductsController extends AppController
             ->where(['business_day_id' => $businessDayId])
             ->contain(['ProductMasters'])
             ->orderBy(['Products.id' => 'ASC']);
+        $businessDay = $this->Products->BusinessDays->get($businessDayId);
 
-        $this->set(compact('products', 'businessDayId'));
+        $this->set(compact('products', 'businessDayId', 'businessDay'));
     }
 
 

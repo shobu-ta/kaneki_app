@@ -1,4 +1,7 @@
-<h1 class="mb-3">出品管理</h1>
+<h1 class="mb-3">
+  営業日<?= h($businessDay->business_date->i18nFormat('yyyy/MM/dd')) ?>の出品管理
+</h1>
+
 
 <!-- 上部：追加ボタンだけ -->
 <div class="mb-3">
