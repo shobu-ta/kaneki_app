@@ -67,9 +67,53 @@ class BusinessDaysController extends AppController
      */
     public function view($id = null)
     {
-        $businessDay = $this->BusinessDays->get($id, contain: ['Products', 'Reservations']);
-        $this->set(compact('businessDay'));
+        // 営業日自体
+        $businessDay = $this->BusinessDays->get($id);
+
+        // 予約商品を集計（reservedのみ）
+        $reservationItems = $this->fetchTable('ReservationItems');
+
+        $summary = $reservationItems->find()
+            ->select([
+                'product_id' => 'ReservationItems.product_id',
+                'product_name' => 'ReservationItems.product_name_at_order',
+                'unit_price' => 'ReservationItems.price_at_order',
+                'total_qty' => $reservationItems->find()->func()->sum('ReservationItems.quantity'),
+                'total_amount' => $reservationItems->find()->func()->sum(
+                    'ReservationItems.price_at_order * ReservationItems.quantity'
+                ),
+            ])
+            ->innerJoinWith('Reservations', function ($q) use ($id) {
+                return $q->where([
+                    'Reservations.business_day_id' => $id,
+                    'Reservations.status' => 'reserved',
+                ]);
+            })
+            // product_id単位で集計（同一商品でも名前を変えたくないならこれが安定）
+            ->group([
+                'ReservationItems.product_id',
+                'ReservationItems.product_name_at_order',
+                'ReservationItems.price_at_order',
+            ])
+            ->order(['product_name' => 'ASC'])
+            ->all();
+
+        // 営業日全体の合計（予約数・合計金額）
+        $reservations = $this->fetchTable('Reservations');
+        $totals = $reservations->find()
+            ->select([
+                'count' => $reservations->find()->func()->count('*'),
+                'total_price' => $reservations->find()->func()->sum('Reservations.total_price'),
+            ])
+            ->where([
+                'Reservations.business_day_id' => $id,
+                'Reservations.status' => 'reserved',
+            ])
+            ->first();
+
+        $this->set(compact('businessDay', 'summary', 'totals'));
     }
+
 
     /**
      * Add method

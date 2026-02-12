@@ -1,0 +1,36 @@
+/* CakePHP Flash (message) を目立たせる */
+.message {
+  padding: 12px 14px;
+  margin: 12px 0 18px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 16px;
+  border: 1px solid transparent;
+}
+
+/* 成功 */
+.message.success {
+  background: #eaffea;
+  border-color: #2ecc71;
+  color: #145a32;
+}
+
+/* エラー */
+.message.error {
+  background: #ffecec;
+  border-color: #e74c3c;
+  color: #7b241c;
+}
+
+/* 警告/情報も必要なら */
+.message.warning {
+  background: #fff5d6;
+  border-color: #f39c12;
+  color: #7a4b00;
+}
+
+.message.info {
+  background: #e8f4ff;
+  border-color: #3498db;
+  color: #0b3d62;
+}

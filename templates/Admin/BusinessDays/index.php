@@ -75,11 +75,12 @@ for ($m = 1; $m <= 12; $m++) {
     <thead class="table-light">
       <tr>
         <th style="width: 80px;">ID</th>
-        <th style="min-width: 140px;">営業日</th>
-        <th style="min-width: 170px;">予約締切</th>
+        <th style="min-width: 100px;">営業日</th>
+        <th style="min-width: 100px;">予約締切</th>
         <th style="width: 90px;">状態</th>
         <th style="width: 120px;">操作</th>
         <th style="width: 120px;">出品管理</th>
+        <th style="width: 120px;">予約集計</th>
       </tr>
     </thead>
 
@@ -151,6 +152,12 @@ for ($m = 1; $m <= 12; $m++) {
               ['class' => 'btn btn-sm btn-outline-success']
             ) ?>
           </td>
+          <td>
+            <?= $this->Html->link(
+              '予約集計',
+              ['action' => 'view', $day->id],
+              ['class' => 'btn btn-sm btn-outline-info']
+            ) ?>
         </tr>
       <?php endforeach; ?>
     </tbody>
