@@ -1,49 +1,73 @@
-<h1>出品商品追加</h1>
+<h1 class="h4 mb-3">出品商品追加</h1>
 
-<?= $this->Form->create($product) ?>
+<?= $this->Flash->render() ?>
 
-<fieldset>
-    <legend>出品情報</legend>
+<div class="card">
+  <div class="card-body">
 
-    <!-- 商品マスタ選択 -->
-    <label for="product-master-select">商品</label>
-    <select name="product_master_id" id="product-master-select">
+    <?= $this->Form->create($product) ?>
+
+    <div class="mb-3">
+      <label for="product-master-select" class="form-label">商品（マスタ）</label>
+      <select name="product_master_id" id="product-master-select" class="form-select" required>
         <option value="">商品を選択してください</option>
         <?php foreach ($productMasters as $pm) : ?>
-            <option
-                value="<?= (int)$pm->id ?>"
-                data-base-price="<?= (int)$pm->base_price ?>"
-            >
-                <?= h($pm->name) ?>（基本 <?= number_format($pm->base_price) ?>円）
-            </option>
+          <option
+            value="<?= (int)$pm->id ?>"
+            data-base-price="<?= (int)$pm->base_price ?>"
+          >
+            <?= h($pm->name) ?>（基本 <?= number_format((int)$pm->base_price) ?>円）
+          </option>
         <?php endforeach; ?>
-    </select>
+      </select>
+      <div class="form-text">選択すると販売価格に基本価格が自動入力されます。</div>
+    </div>
 
-    <!-- 価格 -->
-    <?= $this->Form->control('price', [
-        'label' => '販売価格（円）',
-        'type' => 'number',
-        'id' => 'price-input',
-    ]) ?>
+    <div class="row g-3">
+      <div class="col-12 col-md-6">
+        <?= $this->Form->control('price', [
+          'label' => '販売価格（円）',
+          'type' => 'number',
+          'id' => 'price-input',
+          'class' => 'form-control',
+          'min' => 0,
+          'required' => true,
+          'inputmode' => 'numeric',
+          'placeholder' => '例）300',
+        ]) ?>
+      </div>
 
-    <!-- 数量上限 -->
-    <?= $this->Form->control('max_quantity', [
-        'label' => '数量上限（空欄＝無制限）',
-        'type' => 'number',
-        'required' => false,
-    ]) ?>
+      <div class="col-12 col-md-6">
+        <?= $this->Form->control('max_quantity', [
+          'label' => '数量上限（空欄＝無制限）',
+          'type' => 'number',
+          'class' => 'form-control',
+          'required' => false,
+          'min' => 0,
+          'inputmode' => 'numeric',
+          'placeholder' => '例）15',
+        ]) ?>
+      </div>
+    </div>
 
-    <!-- 表示/非表示 -->
-    <?= $this->Form->control('is_active', [
-        'label' => '表示する',
-        'type' => 'checkbox',
-        'default' => true,
-    ]) ?>
+    <div class="form-check mt-3">
+      <?= $this->Form->checkbox('is_active', [
+        'class' => 'form-check-input',
+        'id' => 'is-active',
+        'checked' => true,
+      ]) ?>
+      <label class="form-check-label" for="is-active">表示する</label>
+    </div>
 
-</fieldset>
+    <div class="d-grid gap-2 mt-4">
+      <?= $this->Form->button('登録する', ['class' => 'btn btn-primary btn-lg']) ?>
+      <?= $this->Html->link('一覧へ戻る', ['action' => 'index', $businessDayId], ['class' => 'btn btn-outline-secondary']) ?>
+    </div>
 
-<?= $this->Form->button('登録する') ?>
-<?= $this->Form->end() ?>
+    <?= $this->Form->end() ?>
+
+  </div>
+</div>
 
 <script>
 (function() {
@@ -56,17 +80,9 @@
     const opt = select.options[select.selectedIndex];
     const basePrice = opt ? opt.dataset.basePrice : '';
 
-  if (basePrice) {
-  priceInput.value = basePrice;
-  }
-
+    if (basePrice) {
+      priceInput.value = basePrice;
+    }
   });
 })();
 </script>
-
-<p>
-<?= $this->Html->link(
-    '一覧へ戻る',
-    ['action' => 'index', $businessDayId]
-) ?>
-</p>

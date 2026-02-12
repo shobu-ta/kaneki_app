@@ -90,12 +90,12 @@ class BusinessDaysController extends AppController
                 ]);
             })
             // product_id単位で集計（同一商品でも名前を変えたくないならこれが安定）
-            ->group([
+            ->groupBy([
                 'ReservationItems.product_id',
                 'ReservationItems.product_name_at_order',
                 'ReservationItems.price_at_order',
             ])
-            ->order(['product_name' => 'ASC'])
+            ->orderBy(['product_name' => 'ASC'])
             ->all();
 
         // 営業日全体の合計（予約数・合計金額）
