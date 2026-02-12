@@ -52,18 +52,9 @@
           <td>
             <div class="d-flex flex-wrap gap-2">
               <?= $this->Html->link(
-                '編集',
+                 '編集',
                 ['action' => 'edit', $product->id],
                 ['class' => 'btn btn-sm btn-outline-primary']
-              ) ?>
-
-              <?= $this->Form->postLink(
-                '出品取り下げ',
-                ['action' => 'delete', $product->id],
-                [
-                  'confirm' => 'この出品を取り下げます。よろしいですか？',
-                  'class' => 'btn btn-sm btn-outline-danger'
-                ]
               ) ?>
             </div>
           </td>

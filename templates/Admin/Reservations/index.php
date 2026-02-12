@@ -63,6 +63,7 @@ for ($m = 1; $m <= 12; $m++) {
             <th>氏名</th>
             <th>電話</th>
             <th>メール</th>
+            <th>備考コメント</th>
             <th>合計</th>
             <th>予約日時</th>
             <th>操作</th>
@@ -80,6 +81,7 @@ for ($m = 1; $m <= 12; $m++) {
             <td><?= h($r->customer_name) ?></td>
             <td><?= h($r->phone) ?></td>
             <td><?= h($r->email ?? '-') ?></td>
+            <td><?= trim((string)$r->note) !== '' ? '有' : '無' ?></td>
             <td><?= number_format($r->total_price) ?> 円</td>
             <td><?= h($r->created) ?></td>
             <td>

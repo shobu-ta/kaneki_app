@@ -81,7 +81,8 @@ class ProductsController extends AppController
      */
     public function edit($id)
     {
-        $product = $this->Products->get($id);
+        $product = $this->Products->get($id, ['contain' => ['BusinessDays']]);
+        $businessDay = $product->business_day;
 
         $reservationItems = $this->fetchTable('ReservationItems');
 
@@ -118,32 +119,6 @@ class ProductsController extends AppController
             ->find('list')
             ->where(['is_active' => true]);
 
-        $this->set(compact('product', 'productMasters', 'reservedReservationCount', 'reservedItemCount'));
-    }
-
-
-    /**
-     * Delete method
-     *
-     * @param string|null $id Product id.
-     * @return \Cake\Http\Response|null Redirects to index.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function delete($id = null)
-    {
-        $this->request->allowMethod(['post', 'delete']);
-
-        $product = $this->Products->get($id);
-
-        // ★ index に戻すために必要
-        $businessDayId = $product->business_day_id;
-
-        if ($this->Products->delete($product)) {
-            $this->Flash->success(__('出品を取り下げました'));
-        } else {
-            $this->Flash->error(__('The product could not be deleted. Please, try again.'));
-        }
-
-        return $this->redirect(['action' => 'index', $businessDayId]);
+        $this->set(compact('product', 'productMasters', 'reservedReservationCount', 'reservedItemCount', 'businessDay'));
     }
 }

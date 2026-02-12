@@ -32,7 +32,7 @@
         <div class="form-check">
           <?= $this->Form->control('is_active', [
             'type' => 'checkbox',
-            'label' => 'この営業日を有効にする',
+            'label' => 'この営業日を表示する（チェックを外すと予約受付を停止します）',
             'class' => 'form-check-input',
             'templates' => [
               'inputContainer' => '{{content}}',

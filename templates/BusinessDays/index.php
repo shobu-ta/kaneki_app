@@ -7,17 +7,19 @@
 $now = new \DateTimeImmutable();
 ?>
 
-<h1 class="mb-3">営業日一覧</h1>
+<h1 class="mb-3">米粉蒸しパンkaneki予約受付</h1>
 
 <div class="table-responsive">
   <table class="table table-striped table-bordered align-middle">
     <thead class="table-light">
       <tr>
         <th style="min-width: 140px;">営業日</th>
-        <th style="min-width: 170px;">予約締切</th>
+        <th style="min-width: 170px;">予約締切時間</th>
         <th style="min-width: 130px;">受付状態</th>
-        <th style="min-width: 280px;">メニュー一覧</th>
-        <th style="min-width: 140px;">詳細</th>
+        <th style="min-width: 280px;">メニュー</th>
+        <th style="min-width: 100px;">価格（税込）</th>
+        <th style="min-width: 140px;">予約へ進む</th>
+        
       </tr>
     </thead>
 
@@ -65,9 +67,8 @@ $now = new \DateTimeImmutable();
                   <li class="mb-1">
                     <span class="fw-semibold">
                       <?= h($product->product_master->name ?? '商品名なし') ?>
-                    </span>
-                    <span class="text-muted">-</span>
-                    <?= h(number_format((int)$product->price)) ?>円
+                    
+                    
                     <?php if ($product->max_quantity !== null): ?>
                       <span class="text-muted">(上限 <?= (int)$product->max_quantity ?>)</span>
                     <?php endif; ?>
@@ -76,6 +77,18 @@ $now = new \DateTimeImmutable();
               </ul>
             <?php else: ?>
               <span class="text-muted">出品がありません</span>
+            <?php endif; ?>
+          </td>
+
+          <td class="small">
+            <?php if (!empty($day->products)): ?>
+              <ul class="list-unstyled mb-0">
+                <?php foreach ($day->products as $product): ?>
+                  <li class="mb-1"><?= h(number_format((int)$product->price)) ?>円</li>
+                <?php endforeach; ?>
+              </ul>
+            <?php else: ?>
+              <span class="text-muted">-</span>
             <?php endif; ?>
           </td>
 

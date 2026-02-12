@@ -1,4 +1,6 @@
-<h1 class="h4 mb-3">出品商品編集</h1>
+<h1 class="mb-3">
+  営業日<?= h($businessDay->business_date->i18nFormat('yyyy/MM/dd')) ?>の出品商品編集
+</h1>
 
 <?php if ($reservedReservationCount > 0): ?>
   <div class="alert alert-warning">
@@ -13,9 +15,9 @@
 
     <div class="small">
       <span class="fw-bold">重要：</span>
-      予約済みの金額は <code>reservation_items.price_at_order</code> が使われるため、
-      ここで価格を変更しても<strong>過去の予約金額</strong>は変わりません。<br>
-      ただし、管理上の表示や想定価格と齟齬が出る可能性があります。
+      予約済みの商品は <code>予約時の金額</code> が優先的に使われるため、
+      ここで価格を変更しても<strong>予約時の金額</strong>は変わりません。<br>
+      そのため、管理上の予約金額と出品価格に齟齬が出る可能性があります。
     </div>
   </div>
 <?php endif; ?>
@@ -68,7 +70,7 @@
 
       <!-- 表示状態 -->
       <div class="col-12 col-md-6">
-        <label class="form-label d-block">表示</label>
+        <label class="form-label d-block">表示<strong>（チェックを外して更新すると非表示になります）</strong></label>
         <div class="form-check">
           <?= $this->Form->control('is_active', [
             'type' => 'checkbox',
@@ -86,7 +88,7 @@
 
     <hr class="my-4">
 
-    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+      <div class="d-grid gap-2 d-md-flex justify-content-md-end">
       <?= $this->Html->link(
         '一覧へ戻る',
         ['action' => 'index', $product->business_day_id],
@@ -94,6 +96,7 @@
       ) ?>
 
       <?= $this->Form->button('更新する', ['class' => 'btn btn-primary']) ?>
+      </div>
     </div>
 
     <?= $this->Form->end() ?>

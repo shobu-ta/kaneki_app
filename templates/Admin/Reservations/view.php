@@ -1,3 +1,56 @@
+<h1>予約詳細 #<?= (int)$reservation->id ?></h1>
+
+<table border="1" cellpadding="5">
+  <tbody>
+    <tr>
+      <th>ID</th>
+      <td><?= (int)$reservation->id ?></td>
+    </tr>
+    <tr>
+      <th>営業日</th>
+      <td><?= $reservation->business_day ? h($reservation->business_day->business_date) : '-' ?></td>
+    </tr>
+    <tr>
+      <th>受付経路</th>
+      <td><?= h($reservation->source) ?></td>
+    </tr>
+    <tr>
+      <th>ステータス</th>
+      <td><?= h($reservation->status) ?></td>
+    </tr>
+    <tr>
+      <th>氏名</th>
+      <td><?= h($reservation->customer_name) ?></td>
+    </tr>
+    <tr>
+      <th>電話</th>
+      <td><?= h($reservation->phone) ?></td>
+    </tr>
+    <tr>
+      <th>メール</th>
+      <td><?= h($reservation->email ?? '-') ?></td>
+    </tr>
+    <tr>
+      <th>備考</th>
+      <td>
+        <?php if (trim((string)$reservation->note) !== ''): ?>
+          <?= nl2br(h($reservation->note)) ?>
+        <?php else: ?>
+          -
+        <?php endif; ?>
+      </td>
+    </tr>
+    <tr>
+      <th>合計</th>
+      <td><?= number_format($reservation->total_price) ?> 円</td>
+    </tr>
+    <tr>
+      <th>予約日時</th>
+      <td><?= h($reservation->created) ?></td>
+    </tr>
+  </tbody>
+</table>
+
 <h2>商品内訳（数量変更・削除）</h2>
 
 <?= $this->Form->create(null, [
@@ -45,3 +98,4 @@
   <?= $this->Html->link('予約一覧に戻る', [
       'action' => 'index',
   ]) ?>
+</p>
