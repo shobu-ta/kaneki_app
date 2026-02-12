@@ -230,11 +230,13 @@ class ReservationsController extends AppController
         $items = (array)$session->read('Reservation.items');
         $businessDayId = (int)$session->read('Reservation.business_day_id');
         $customer = (array)$session->read('Reservation.customer');
+
         if (empty($items) || empty($customer)) {
             $this->Flash->error('セッションが切れました。最初からやり直してください。');
             return $this->redirect(['controller' => 'BusinessDays', 'action' => 'index']);
         }
-        // 営業日締切チェック（改ざん対策で再確認）
+
+        // 営業日締切チェック
         $businessDay = $this->fetchTable('BusinessDays')->get($businessDayId);
         if ($businessDay->order_deadline < new \DateTimeImmutable()) {
             $this->Flash->error('受付終了しています。');
@@ -252,21 +254,50 @@ class ReservationsController extends AppController
             ->contain(['ProductMasters'])
             ->all()
             ->indexBy('id')
-            ->toArray(); 
+            ->toArray();
 
-        // 合計計算＆上限チェック（簡易：max_quantity >= quantity）
-        $lines = [];
-        $total = 0;
+        // 今回の注文数量を product_id ごとに合算（同一商品が複数行でも安全）
+        $requestedMap = [];
         foreach ($items as $it) {
-        $pid = (int)$it['product_id'];
-        $p = $products[$pid] ?? null;  
-        if (!$p) continue;
+            $pid = (int)$it['product_id'];
+            $requestedMap[$pid] = ($requestedMap[$pid] ?? 0) + (int)$it['quantity'];
+        }
 
-            $q = (int)$it['quantity'];
-            if ($p->max_quantity !== null && $q > (int)$p->max_quantity) {
-                $this->Flash->error('数量上限を超えています：' . $p->product_master->name);
+        //  追加：予約済み合計（status=reservedのみ）を product_id ごとに取得
+        $reservationItems = $this->fetchTable('ReservationItems');
+        $reservedMap = $reservationItems->sumReservedQuantityByProductIds(array_keys($requestedMap));
+
+        //  追加：合算上限チェック（予約済み + 今回 <= max_quantity）
+        foreach ($requestedMap as $pid => $reqQty) {
+            $p = $products[$pid] ?? null;
+            if (!$p) {
+                $this->Flash->error('選択商品が不正です。');
                 return $this->redirect(['controller' => 'BusinessDays', 'action' => 'view', $businessDayId]);
             }
+
+            if ($p->max_quantity !== null) {
+                $already = $reservedMap[$pid] ?? 0;
+                if ($already + $reqQty > (int)$p->max_quantity) {
+                    $remain = max(0, (int)$p->max_quantity - $already);
+                    $this->Flash->error('申し訳ございません。予約数量の上限を超えています。：' . $p->product_master->name . '（残り ' . $remain . '）');
+                    return $this->redirect(['controller' => 'BusinessDays', 'action' => 'view', $businessDayId]);
+                }
+            }
+        }
+
+        // 合計計算（ここは今まで通りでOK）
+        $lines = [];
+        $total = 0;
+
+        foreach ($items as $it) {
+            $pid = (int)$it['product_id'];
+            $p = $products[$pid] ?? null;
+            if (!$p) continue;
+
+            $q = (int)$it['quantity'];
+
+            // ★ ここにあった「1回の注文内チェック」は不要（合算チェックに置き換え済み）
+            // if ($p->max_quantity !== null && $q > (int)$p->max_quantity) ...
 
             $lineTotal = $p->price * $q;
             $total += $lineTotal;
@@ -280,7 +311,6 @@ class ReservationsController extends AppController
         }
 
         $reservations = $this->fetchTable('Reservations');
-        $reservationItems = $this->fetchTable('ReservationItems');
 
         $connection = $reservations->getConnection();
         $connection->begin();
@@ -304,7 +334,7 @@ class ReservationsController extends AppController
             foreach ($lines as [$p, $q]) {
                 $ri = $reservationItems->newEntity([
                     'reservation_id' => $reservation->id,
-                    'product_id' => $p->id, // 出品ID
+                    'product_id' => $p->id,
                     'product_name_at_order' => $p->product_master->name,
                     'price_at_order' => $p->price,
                     'quantity' => $q,
@@ -317,9 +347,7 @@ class ReservationsController extends AppController
 
             $connection->commit();
 
-            // セッション削除
             $session->delete('Reservation');
-
             return $this->redirect(['action' => 'done']);
         } catch (\Throwable $e) {
             $connection->rollback();
@@ -327,6 +355,7 @@ class ReservationsController extends AppController
             return $this->redirect(['action' => 'confirm']);
         }
     }
+
 
     public function done()
     {

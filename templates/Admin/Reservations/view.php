@@ -94,6 +94,13 @@
 </p>
 
 <?= $this->Form->end() ?>
+
+<?= $this->Form->postLink(
+    ($reservation->status === 'canceled') ? '予約を復活しますか？' : 'キャンセル扱いに変更しますか？',
+    ['action' => 'toggleStatus', $reservation->id],
+    ['confirm' => 'ステータスを変更します。よろしいですか？']
+) ?>
+
 <p>
   <?= $this->Html->link('予約一覧に戻る', [
       'action' => 'index',

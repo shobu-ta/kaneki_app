@@ -61,7 +61,7 @@ class ReservationsController extends AppController
         // 次に予約一覧クエリ
         $query = $this->Reservations->find()
             ->contain(['BusinessDays'])
-            ->order(['Reservations.id' => 'DESC']);
+            ->orderBy(['Reservations.id' => 'DESC']);
 
         // 営業日で絞る（年月で候補を絞って、さらに任意で1日選べる）
         if ($businessDayId > 0) {
@@ -111,7 +111,6 @@ class ReservationsController extends AppController
         $this->set(compact('reservation'));
     }
 
-    //URLで渡される予約ID（例：/admin/reservations/update-items/4 の 4）を受け取る
     public function updateItems($id = null)
     {
         $this->request->allowMethod(['post']);
@@ -120,74 +119,145 @@ class ReservationsController extends AppController
             'contain' => ['ReservationItems'],
         ]);
 
-        $qtyMap = (array)$this->request->getData('qty'); // フォームから送られてきた数量の配列を受け取る　例：qty[12]=3（明細ID12の数量を3にする）
-        $deleteMap = (array)$this->request->getData('delete'); //フォームから送られてきた削除チェックの配列を受け取る　例：delete[12]=1（明細ID12を削除する）
+        $qtyMap = (array)$this->request->getData('qty');
+        $deleteMap = (array)$this->request->getData('delete');
 
-        $reservationItems = $this->fetchTable('ReservationItems');//ReservationItemsTable を取得して、明細を更新/削除できるようにする
+        $reservationItems = $this->fetchTable('ReservationItems');
 
-        $conn = $this->Reservations->getConnection();//DB接続（コネクション）を取得
-        $conn->begin();//トランザクション開始　ここから先で失敗したら rollback() で全部なかったことにできる
+        $conn = $this->Reservations->getConnection();
+        $conn->begin();
 
         try {
-            // ここから「成功させたい処理」を書くブロック（失敗したら catch に行く）
-            $items = $reservationItems->find()//この予約に紐づく明細を DBから改めて取り直す　画面に表示されていたものが古い/改ざんされた等を避ける意図もある
+            // この予約の明細をDBから取り直す
+            $items = $reservationItems->find()
                 ->where(['reservation_id' => $reservation->id])
                 ->all();
 
-            $newTotal = 0;//新しい合計金額をここに足していくため、最初は0
-            $remainCount = 0;//明細が何行残ったか数える（全部削除されたか判断するため）
+            // ✅ ① 更新前/更新後の数量を product_id ごとに集計
+            $beforeMap = []; // product_id => 更新前合計（この予約分）
+            $afterMap  = []; // product_id => 更新後合計（この予約分）
 
-            foreach ($items as $item) { //予約の明細1行ずつ処理するループ開始
-                $itemId = (int)$item->id; //明細行のIDを数値にして変数へ
+            foreach ($items as $item) {
+                $itemId = (int)$item->id;
+                $pid = (int)$item->product_id;
 
-                // その明細行に「削除チェック」が付いていたらDBから削除してこの明細の処理はここで終了（continue で次の明細へ）
+                // 更新前（この予約が元々持ってる数量）
+                $beforeMap[$pid] = ($beforeMap[$pid] ?? 0) + (int)$item->quantity;
+
+                // 削除チェック or 0以下なら更新後は増えない（=0扱い）
                 if (!empty($deleteMap[$itemId])) {
-                    $reservationItems->delete($item);
                     continue;
                 }
 
-                // 数量がフォームから送られてきたならそれを使う　送られてきてなければ、今の数量をそのまま使う（現状維持）
+                $newQty = isset($qtyMap[$itemId]) ? (int)$qtyMap[$itemId] : (int)$item->quantity;
+                if ($newQty <= 0) {
+                    continue;
+                }
+
+                // 更新後（この予約が最終的に持つ数量）
+                $afterMap[$pid] = ($afterMap[$pid] ?? 0) + $newQty;
+            }
+
+            // ✅ ② 在庫チェック（この予約が reserved のときのみチェック）
+            // canceled の予約を編集しても在庫は消費していない想定なので、まずは reserved の時に守る
+            if ($reservation->status === 'reserved' && !empty($afterMap)) {
+
+                // 全ユーザーの予約済み合計（status=reservedのみ）
+                $reservedMap = $reservationItems->sumReservedQuantityByProductIds(array_keys($afterMap));
+
+                // max_quantity を見るため products を取得
+                $products = $this->fetchTable('Products')->find()
+                    ->where(['Products.id IN' => array_keys($afterMap)])
+                    ->contain(['ProductMasters'])
+                    ->all()
+                    ->indexBy('id')
+                    ->toArray();
+
+                foreach ($afterMap as $pid => $afterQty) {
+                    $p = $products[$pid] ?? null;
+                    if (!$p) {
+                        throw new \RuntimeException('不正な商品が含まれています。');
+                    }
+
+                    // max_quantity が null なら無制限
+                    if ($p->max_quantity === null) {
+                        continue;
+                    }
+
+                    $reservedAll = $reservedMap[$pid] ?? 0;
+
+                    // ★重要：全体合計には「この予約の更新前数量」も含まれるので差し引く
+                    $others = $reservedAll - ($beforeMap[$pid] ?? 0);
+                    if ($others < 0) $others = 0;
+
+                    // 他人分 + この予約の更新後 が上限超えたらNG
+                    if ($others + $afterQty > (int)$p->max_quantity) {
+                        $remain = max(0, (int)$p->max_quantity - $others);
+                        throw new \RuntimeException(
+                            '在庫不足：' . $p->product_master->name . '（残り ' . $remain . '）'
+                        );
+                    }
+                }
+            }
+
+            // ✅ ③ 在庫OKなら、ここから実際に更新/削除を実行
+            $newTotal = 0;
+            $remainCount = 0;
+
+            foreach ($items as $item) {
+                $itemId = (int)$item->id;
+
+                if (!empty($deleteMap[$itemId])) {
+                    if (!$reservationItems->delete($item)) {
+                        throw new \RuntimeException('明細の削除に失敗しました');
+                    }
+                    continue;
+                }
+
                 $newQty = isset($qtyMap[$itemId]) ? (int)$qtyMap[$itemId] : (int)$item->quantity;
 
-                // 数量が0以下なら「削除扱い」にして行を消す そして次の明細へ（UIが簡単になる設計）
                 if ($newQty <= 0) {
-                    $reservationItems->delete($item);
+                    if (!$reservationItems->delete($item)) {
+                        throw new \RuntimeException('明細の削除に失敗しました');
+                    }
                     continue;
                 }
 
-                $item->quantity = $newQty; //明細行の数量を新しい数量に更新
-                //DBに保存できたかチェック　失敗なら例外を投げて catch に飛ばす（トランザクションをロールバックするため
+                $item->quantity = $newQty;
                 if (!$reservationItems->save($item)) {
                     throw new \RuntimeException('明細の更新に失敗しました');
                 }
 
-                $remainCount++; //この明細は残ったので、残数を1増やす
-                $newTotal += ((int)$item->price_at_order) * $newQty; //明細の小計（単価×数量）を合計に足し込む price_at_order は「注文時価格」なので、後から価格が変わっても履歴が保てる
+                $remainCount++;
+                $newTotal += ((int)$item->price_at_order) * $newQty;
             }
 
-            // 明細が0行なら予約をキャンセル扱いにする　合計は0にする　明細が残っていれば計算した合計金額に更新する
             if ($remainCount === 0) {
                 $reservation->status = 'canceled';
                 $reservation->total_price = 0;
             } else {
                 $reservation->total_price = $newTotal;
             }
-            //合計金額やステータス変更を reservations に保存 失敗なら例外→catchへ
+
             if (!$this->Reservations->save($reservation)) {
                 throw new \RuntimeException('予約の更新に失敗しました');
             }
-            //ここまで成功したので、トランザクションを確定（DBに正式反映
+
             $conn->commit();
 
             $this->Flash->success('予約内容を更新しました');
             return $this->redirect(['action' => 'view', $reservation->id]);
-        //途中で何か失敗したらここに来る（save失敗・delete失敗・例外など全部）
+
         } catch (\Throwable $e) {
-            $conn->rollback();//トランザクション中の変更を全部取り消す（明細更新だけ反映、などが起きない）
-            $this->Flash->error('更新に失敗しました');
+            $conn->rollback();
+
+            // ✅ 失敗理由（在庫不足など）をそのまま表示すると原因がわかりやすい
+            $this->Flash->error($e->getMessage());
+
             return $this->redirect(['action' => 'view', $reservation->id]);
         }
     }
+
     /**
      * Add method
      *
@@ -197,7 +267,6 @@ class ReservationsController extends AppController
     {
         $reservation = $this->Reservations->newEmptyEntity();
 
-        // 営業日セレクト（有効のみ）
         $businessDays = $this->Reservations->BusinessDays->find('list', [
                 'keyField' => 'id',
                 'valueField' => 'business_date',
@@ -218,7 +287,13 @@ class ReservationsController extends AppController
                 }
             }
 
-            // 最低限チェック
+            // ✅ 追加：今回の数量を product_id ごとに合算
+            $requestedMap = [];
+            foreach ($items as $it) {
+                $pid = (int)$it['product_id'];
+                $requestedMap[$pid] = ($requestedMap[$pid] ?? 0) + (int)$it['quantity'];
+            }
+
             if ($businessDayId <= 0) {
                 $this->Flash->error('営業日を選択してください。');
             } elseif (empty($items)) {
@@ -234,13 +309,35 @@ class ReservationsController extends AppController
                     ])
                     ->contain(['ProductMasters'])
                     ->orderBy(['Products.id' => 'ASC']);
-                
+
                 $products = [];
                 foreach ($productsQuery as $product) {
                     $products[$product->id] = $product;
                 }
 
-                // 合計計算 + 上限チェック（簡易）
+                // ✅ 追加：予約済み合計（reservedのみ）を product_id ごとに取得
+                $reservationItemsTable = $this->fetchTable('ReservationItems');
+                $reservedMap = $reservationItemsTable->sumReservedQuantityByProductIds(array_keys($requestedMap));
+
+                // ✅ 追加：合算上限チェック（予約済み + 今回 <= max_quantity）
+                foreach ($requestedMap as $pid => $reqQty) {
+                    $p = $products[$pid] ?? null;
+                    if (!$p) {
+                        $this->Flash->error('不正な商品が含まれています。');
+                        return $this->redirect(['action' => 'add']);
+                    }
+
+                    if ($p->max_quantity !== null) {
+                        $already = $reservedMap[$pid] ?? 0;
+                        if ($already + $reqQty > (int)$p->max_quantity) {
+                            $remain = max(0, (int)$p->max_quantity - $already);
+                            $this->Flash->error('予約数量の上限を超えています。上限を超えて予約を承るのであれば出品管理から同一の商品を追加してください。：' . $p->product_master->name . '（残り ' . $remain . '）');
+                            return $this->redirect(['action' => 'add']);
+                        }
+                    }
+                }
+
+                // 合計計算（ここは今まで通り）
                 $lines = [];
                 $total = 0;
 
@@ -253,11 +350,8 @@ class ReservationsController extends AppController
 
                     $q = (int)$it['quantity'];
 
-                    // 上限（max_quantity）チェック：今回は「1予約内だけ」チェック
-                    if ($p->max_quantity !== null && $q > (int)$p->max_quantity) {
-                        $this->Flash->error('数量上限を超えています：' . $p->product_master->name);
-                        return $this->redirect(['action' => 'add']);
-                    }
+                    // ★削除：1予約内だけチェックは不要（合算チェックで担保済み）
+                    // if ($p->max_quantity !== null && $q > (int)$p->max_quantity) ...
 
                     $lineTotal = $p->price * $q;
                     $total += $lineTotal;
@@ -271,14 +365,13 @@ class ReservationsController extends AppController
                 }
 
                 // トランザクションで保存
-                $reservationItemsTable = $this->fetchTable('ReservationItems');
                 $conn = $this->Reservations->getConnection();
                 $conn->begin();
 
                 try {
                     $reservation = $this->Reservations->newEntity([
                         'business_day_id' => $businessDayId,
-                        'source' => 'instagram',   // ★固定
+                        'source' => 'instagram',
                         'status' => 'reserved',
                         'customer_name' => $data['customer_name'],
                         'phone' => $data['phone'],
@@ -294,7 +387,7 @@ class ReservationsController extends AppController
                     foreach ($lines as [$p, $q]) {
                         $ri = $reservationItemsTable->newEntity([
                             'reservation_id' => $reservation->id,
-                            'product_id' => $p->id, // 出品(products)ID
+                            'product_id' => $p->id,
                             'product_name_at_order' => $p->product_master->name,
                             'price_at_order' => $p->price,
                             'quantity' => $q,
@@ -318,6 +411,7 @@ class ReservationsController extends AppController
 
         $this->set(compact('reservation', 'businessDays'));
     }
+
 
     public function productsForBusinessDay()
     {
@@ -403,18 +497,84 @@ class ReservationsController extends AppController
     {
         $this->request->allowMethod(['post']);
 
-        $reservation = $this->Reservations->get($id);
+        $conn = $this->Reservations->getConnection();
+        $conn->begin();
 
-        $next = ($reservation->status === 'canceled') ? 'reserved' : 'canceled';
-        $reservation->status = $next;
+        try {
+            // 予約 + 明細を取得
+            $reservation = $this->Reservations->get($id, [
+                'contain' => ['ReservationItems'],
+            ]);
 
-        if ($this->Reservations->save($reservation)) {
+            // reserved <-> canceled を切り替え
+            $next = ($reservation->status === 'canceled') ? 'reserved' : 'canceled';
+
+            // canceled -> reserved に戻す時だけ在庫チェック
+            if ($reservation->status === 'canceled' && $next === 'reserved') {
+
+                // この予約が「復活」させようとしている数量を product_id ごとに集計
+                $restoreMap = []; // product_id => quantity
+                foreach ($reservation->reservation_items as $item) {
+                    $pid = (int)$item->product_id;
+                    $restoreMap[$pid] = ($restoreMap[$pid] ?? 0) + (int)$item->quantity;
+                }
+
+                // 明細が無いなら reserved に戻す意味が薄い（運用次第）
+                if (empty($restoreMap)) {
+                    throw new \RuntimeException('明細が無い予約はreservedに戻せません。');
+                }
+
+                // 全ユーザーの予約済み合計（reservedのみ）
+                $reservationItems = $this->fetchTable('ReservationItems');
+                $reservedMap = $reservationItems->sumReservedQuantityByProductIds(array_keys($restoreMap));
+
+                // max_quantity を見るため products を取得
+                $products = $this->fetchTable('Products')->find()
+                    ->where(['Products.id IN' => array_keys($restoreMap)])
+                    ->contain(['ProductMasters'])
+                    ->all()
+                    ->indexBy('id')
+                    ->toArray();
+
+                // 在庫チェック：reservedAll(他人分) + restore <= max_quantity
+                foreach ($restoreMap as $pid => $restoreQty) {
+                    $p = $products[$pid] ?? null;
+                    if (!$p) {
+                        throw new \RuntimeException('不正な商品が含まれています。');
+                    }
+
+                    if ($p->max_quantity === null) {
+                        continue; // 無制限
+                    }
+
+                    $already = $reservedMap[$pid] ?? 0;
+
+                    if ($already + $restoreQty > (int)$p->max_quantity) {
+                        $remain = max(0, (int)$p->max_quantity - $already);
+                        throw new \RuntimeException(
+                            '在庫不足のため予約を復活できません：' . $p->product_master->name . '（残り ' . $remain . '）'
+                        );
+                    }
+                }
+            }
+
+            // ステータス更新
+            $reservation->status = $next;
+
+            if (!$this->Reservations->save($reservation)) {
+                throw new \RuntimeException('ステータス更新に失敗しました');
+            }
+
+            $conn->commit();
             $this->Flash->success('ステータスを更新しました：' . $next);
-        } else {
-            $this->Flash->error('ステータス更新に失敗しました');
-        }
+            return $this->redirect(['action' => 'view', $id]);
 
-        return $this->redirect(['action' => 'view', $id]);
+        } catch (\Throwable $e) {
+            $conn->rollback();
+            $this->Flash->error($e->getMessage());
+            return $this->redirect(['action' => 'view', $id]);
+        }
     }
+
 
 }
