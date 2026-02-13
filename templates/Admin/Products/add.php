@@ -39,7 +39,7 @@
 
       <div class="col-12 col-md-6">
         <?= $this->Form->control('max_quantity', [
-          'label' => '数量上限（空欄＝無制限）',
+          'label' => '数量限定（空欄＝無制限）',
           'type' => 'number',
           'class' => 'form-control',
           'required' => false,

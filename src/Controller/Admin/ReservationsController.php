@@ -111,6 +111,13 @@ class ReservationsController extends AppController
         $this->set(compact('reservation'));
     }
 
+    /*
+     * updateItems method
+     *予約明細の更新（数量変更・削除）　役割：既存予約の明細を編集する（在庫チェック付き）
+     * @param string|null $id Reservation id.
+     * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
+     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
+     */
     public function updateItems($id = null)
     {
         $this->request->allowMethod(['post']);
@@ -287,7 +294,7 @@ class ReservationsController extends AppController
                 }
             }
 
-            // ✅ 追加：今回の数量を product_id ごとに合算
+            // 管理者が入力した数量をまとめる（requestedMap）
             $requestedMap = [];
             foreach ($items as $it) {
                 $pid = (int)$it['product_id'];
@@ -315,11 +322,11 @@ class ReservationsController extends AppController
                     $products[$product->id] = $product;
                 }
 
-                // ✅ 追加：予約済み合計（reservedのみ）を product_id ごとに取得
+                // 予約済み合計（reservedのみ）を集計して reservedMap を作る
                 $reservationItemsTable = $this->fetchTable('ReservationItems');
                 $reservedMap = $reservationItemsTable->sumReservedQuantityByProductIds(array_keys($requestedMap));
 
-                // ✅ 追加：合算上限チェック（予約済み + 今回 <= max_quantity）
+                // 上限チェック（already + reqQty <= max_quantity）
                 foreach ($requestedMap as $pid => $reqQty) {
                     $p = $products[$pid] ?? null;
                     if (!$p) {
@@ -412,7 +419,11 @@ class ReservationsController extends AppController
         $this->set(compact('reservation', 'businessDays'));
     }
 
-
+    /**営業日を選んだら商品一覧を返す（AJAX用) 役割：管理者の予約登録フォームで、営業日を選択したときに、その日の出品商品一覧をJSONで返す。
+     * Products for business day
+     *
+     * @return \Cake\Http\Response|null|void
+     */
     public function productsForBusinessDay()
     {
         $this->request->allowMethod(['get']);
@@ -447,52 +458,12 @@ class ReservationsController extends AppController
          $this->set('products', $list);
     }
 
-
-
     /**
-     * Edit method
-     *
-     * @param string|null $id Reservation id.
+     * Toggle status method 予約のキャンセル/復活（復活時は在庫チェック）役割：予約ステータスを reserved ⇄ canceled で切り替える。
+     * @param string|null $id Admin/reservation id.
      * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function edit($id = null)
-    {
-        $reservation = $this->Reservations->get($id, contain: []);
-        if ($this->request->is(['patch', 'post', 'put'])) {
-            $reservation = $this->Reservations->patchEntity($reservation, $this->request->getData());
-            if ($this->Reservations->save($reservation)) {
-                $this->Flash->success(__('The reservation has been saved.'));
-
-                return $this->redirect(['action' => 'index']);
-            }
-            $this->Flash->error(__('The reservation could not be saved. Please, try again.'));
-        }
-        $businessDays = $this->Reservations->BusinessDays->find('list', limit: 200)->all();
-        $products = $this->Reservations->Products->find('list', limit: 200)->all();
-        $this->set(compact('reservation', 'businessDays', 'products'));
-    }
-
-    /**
-     * Delete method
-     *
-     * @param string|null $id Reservation id.
-     * @return \Cake\Http\Response|null Redirects to index.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function delete($id = null)
-    {
-        $this->request->allowMethod(['post', 'delete']);
-        $reservation = $this->Reservations->get($id);
-        if ($this->Reservations->delete($reservation)) {
-            $this->Flash->success(__('The reservation has been deleted.'));
-        } else {
-            $this->Flash->error(__('The reservation could not be deleted. Please, try again.'));
-        }
-
-        return $this->redirect(['action' => 'index']);
-    }
-
     public function toggleStatus($id = null)
     {
         $this->request->allowMethod(['post']);
@@ -521,7 +492,7 @@ class ReservationsController extends AppController
 
                 // 明細が無いなら reserved に戻す意味が薄い（運用次第）
                 if (empty($restoreMap)) {
-                    throw new \RuntimeException('明細が無い予約はreservedに戻せません。');
+                    throw new \RuntimeException('明細が無い予約は予約確定に戻せません。');
                 }
 
                 // 全ユーザーの予約済み合計（reservedのみ）

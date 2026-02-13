@@ -21,9 +21,11 @@ class ProductMastersController extends AppController
     {
         $productMasters = $this->paginate(
             $this->ProductMasters->find()
-                ->orderBy(['genre' => 'ASC', 'name' => 'ASC'])
-                ->orderBy(['id' => 'DESC'])
+                ->orderBy([ 'genre' => 'ASC',
+                            'name' => 'ASC',
+                            'id' => 'DESC',])
         );
+        //ProductMastersTableクラスに定義されたクラス定数constを参照
         $genres = ProductMastersTable::GENRES;
         $this->set(compact('productMasters', 'genres'));
     }
@@ -98,7 +100,8 @@ class ProductMastersController extends AppController
         $this->request->allowMethod(['post', 'delete']);
 
         $productMaster = $this->ProductMasters->get($id);
-
+        //ProductMastersに関連付いたProductsテーブルに対してproduct_master_id=$idの行が1件でも存在するかを高速に確認する(exists() は存在確認なので軽い）。
+        //ここが成り立つには、ProductMastersTable側にhasMany('Products')等の関連が定義されている前提となる。
         $hasProducts = $this->ProductMasters->Products->exists([
             'product_master_id' => (int)$id,
         ]);

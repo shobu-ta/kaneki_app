@@ -19,6 +19,7 @@ class BusinessDaysController extends AppController
      */
     public function index()
     {
+        //getQuery()でURLのGETパラメータを取得 例:/admin/business-days?year=2026&month=2
         $year = (int)$this->request->getQuery('year');
         $month = (int)$this->request->getQuery('month');
 
@@ -27,12 +28,13 @@ class BusinessDaysController extends AppController
 
         // 年・月が指定されていれば絞り込み
         if ($year > 0 && $month >= 1 && $month <= 12) {
+            // 年月両方指定されている場合
             $start = sprintf('%04d-%02d-01', $year, $month);
             $end = (new \DateTimeImmutable($start))->modify('first day of next month')->format('Y-m-d');
 
             $query->where([
                 'BusinessDays.business_date >=' => $start,
-                'BusinessDays.business_date <'  => $end,
+                'BusinessDays.business_date <' => $end,
             ]);
         } elseif ($year > 0) {
             // 年だけ指定されている場合
@@ -41,7 +43,7 @@ class BusinessDaysController extends AppController
 
             $query->where([
                 'BusinessDays.business_date >=' => $start,
-                'BusinessDays.business_date <'  => $end,
+                'BusinessDays.business_date <' => $end,
             ]);
         }
 

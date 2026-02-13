@@ -2,7 +2,7 @@
 
 <div class="card">
   <div class="card-body">
-
+    //ブラウザのバリデーションを無効化して、サーバー側でのバリデーションに任せる
     <?= $this->Form->create($businessDay, ['novalidate' => true]) ?>
 
     <div class="row g-3">

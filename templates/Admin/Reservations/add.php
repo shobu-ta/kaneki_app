@@ -94,17 +94,17 @@
 
   </div>
 </div>
-
+<!-- フロント側（JavaScript）がAPIを呼ぶ流れ  営業日selectの change を監視 管理者が営業日を選び直した瞬間に loadProducts() を実行します。-->
 <script>
 (function() {
   const select = document.getElementById('business-day-select');
   const area = document.getElementById('products-area');
   if (!select || !area) return;
-
+  
   const endpoint = '<?= $this->Url->build([
     'prefix' => 'Admin',
     'controller' => 'Reservations',
-    'action' => 'productsForBusinessDay'
+    'action' => 'productsForBusinessDay',
   ]) ?>';
 
   async function loadProducts(businessDayId) {
@@ -114,7 +114,7 @@
     }
 
     area.innerHTML = '<div class="text-muted">読み込み中...</div>';
-
+    
     try {
       const res = await fetch(endpoint + '?business_day_id=' + encodeURIComponent(businessDayId), {
         headers: { 'Accept': 'application/json' }
@@ -123,7 +123,7 @@
       if (!res.ok) {
         throw new Error('HTTP ' + res.status);
       }
-
+      
       const json = await res.json();
       const products = json.products || [];
 
@@ -138,7 +138,7 @@
       html += '<thead class="table-light"><tr><th>商品</th><th style="width:120px;">価格</th><th style="width:180px;">数量</th></tr></thead><tbody>';
 
       for (const p of products) {
-        const maxLabel = (p.max_quantity !== null) ? ('<span class="text-muted small ms-1">(上限 ' + Number(p.max_quantity) + ')</span>') : '';
+        const maxLabel = (p.max_quantity !== null) ? ('<span class="text-muted small ms-1">(限定 ' + Number(p.max_quantity) + ')</span>') : '';
         const maxAttr = (p.max_quantity !== null) ? (' max="' + Number(p.max_quantity) + '"') : '';
 
         html += '<tr>';
@@ -173,7 +173,6 @@
 
   select.addEventListener('change', () => loadProducts(select.value));
 
-  // 画面再表示（POST失敗など）時に復元
   if (select.value) loadProducts(select.value);
 })();
 </script>

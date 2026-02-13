@@ -20,7 +20,7 @@
         <th style="width: 80px;">ID</th>
         <th style="min-width: 220px;">商品名</th>
         <th style="width: 140px;">価格</th>
-        <th style="width: 140px;">数量上限</th>
+        <th style="width: 140px;">数量限定</th>
         <th style="width: 110px;">状態</th>
         <th style="width: 210px;">操作</th>
       </tr>

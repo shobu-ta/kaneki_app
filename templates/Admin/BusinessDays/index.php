@@ -28,11 +28,14 @@ for ($m = 1; $m <= 12; $m++) {
 }
 ?>
 
+ <!-- bootstrapのカードUI mbとはmargin-bottomの略 -->
 <div class="card mb-3">
   <div class="card-body">
     <?= $this->Form->create(null, ['type' => 'get']) ?>
-
+    <!-- 列同士の隙間を調整 g-0なら隙間なし g-3なら隙間大きめ align-items-endで下で揃える-->
     <div class="row g-2 align-items-end">
+      <!-- bootstrapのグリッドシステム col-12 col-md-6 ならスマホでは12カラム（横幅いっぱい）、PCでは6カラム（横幅の半分） -->
+      <!-- つまりスマホでは縦並び、PCでは横並びになる -->
       <div class="col-6 col-md-3">
         <?= $this->Form->control('year', [
           'label' => '年',
@@ -78,7 +81,7 @@ for ($m = 1; $m <= 12; $m++) {
         <th style="min-width: 100px;">営業日</th>
         <th style="min-width: 100px;">予約締切</th>
         <th style="width: 90px;">状態</th>
-        <th style="width: 120px;">操作</th>
+        <th style="width: 120px;">営業日編集</th>
         <th style="width: 120px;">出品管理</th>
         <th style="width: 120px;">予約集計</th>
       </tr>
@@ -99,9 +102,7 @@ for ($m = 1; $m <= 12; $m++) {
 
           <td>
             <div class="d-flex align-items-center gap-2">
-
-                <?php if ($day->is_active): ?>
-
+              <?php if ($day->is_active) : ?>
                 <span class="badge text-bg-success flex-shrink-0" style="width:60px;">
                     有効
                 </span>
@@ -111,11 +112,10 @@ for ($m = 1; $m <= 12; $m++) {
                     ['action' => 'toggle', $day->id],
                     [
                     'class' => 'btn btn-sm btn-outline-secondary flex-grow-1',
-                    'confirm' => 'この営業日を無効にしますか？'
+                    'confirm' => 'この営業日を無効にしますか？',
                     ]
                 ) ?>
-
-                <?php else: ?>
+              <?php else:?>
 
                 <span class="badge text-bg-secondary flex-shrink-0" style="width:60px;">
                     無効

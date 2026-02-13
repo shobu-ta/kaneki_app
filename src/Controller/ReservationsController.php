@@ -22,35 +22,6 @@ class ReservationsController extends AppController
         // 客側はログイン不要
         $this->Authentication->allowUnauthenticated(['index', 'view', 'add','start','confirm', 'complete', 'done']);
     }
-    /**
-     * Index method
-     *
-     * @return \Cake\Http\Response|null|void Renders view
-     */
-    public function index()
-    {
-        $query = $this->Reservations->find()
-            ->contain(['BusinessDays']);
-        $reservations = $this->paginate($query);
-
-        $this->set(compact('reservations'));
-    }
-
-    /**
-     * View method
-     *
-     * @param string|null $id Reservation id.
-     * @return \Cake\Http\Response|null|void Renders view
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function view($id = null)
-    {
-        $reservation = $this->Reservations->get($id, contain: ['BusinessDays', 'ReservationItems']);
-        $this->set(compact('reservation'));
-    }
-
-
-    
 
     /**
      * Add method
@@ -92,50 +63,6 @@ class ReservationsController extends AppController
                 return $this->redirect(['action' => 'confirm']);
             }
         }
-    }
-
-
-    /**
-     * Edit method
-     *
-     * @param string|null $id Reservation id.
-     * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function edit($id = null)
-    {
-        $reservation = $this->Reservations->get($id, contain: []);
-        if ($this->request->is(['patch', 'post', 'put'])) {
-            $reservation = $this->Reservations->patchEntity($reservation, $this->request->getData());
-            if ($this->Reservations->save($reservation)) {
-                $this->Flash->success(__('The reservation has been saved.'));
-
-                return $this->redirect(['action' => 'index']);
-            }
-            $this->Flash->error(__('The reservation could not be saved. Please, try again.'));
-        }
-        $businessDays = $this->Reservations->BusinessDays->find('list', limit: 200)->all();
-        $this->set(compact('reservation', 'businessDays'));
-    }
-
-    /**
-     * Delete method
-     *
-     * @param string|null $id Reservation id.
-     * @return \Cake\Http\Response|null Redirects to index.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function delete($id = null)
-    {
-        $this->request->allowMethod(['post', 'delete']);
-        $reservation = $this->Reservations->get($id);
-        if ($this->Reservations->delete($reservation)) {
-            $this->Flash->success(__('The reservation has been deleted.'));
-        } else {
-            $this->Flash->error(__('The reservation could not be deleted. Please, try again.'));
-        }
-
-        return $this->redirect(['action' => 'index']);
     }
 
     public function start()
@@ -186,9 +113,9 @@ class ReservationsController extends AppController
 
         $products = $this->fetchTable('Products')->find()
             ->where([
-                'Products.id IN' => $productIds,
-                'Products.business_day_id' => $businessDayId,
-                'Products.is_active' => true,
+                'Products.id IN' => $productIds, //選択された商品IDだけを対象にする
+                'Products.business_day_id' => $businessDayId, //別の営業日の出品商品を混ぜられないようにする
+                'Products.is_active' => true, //取り下げた商品は買えないようにする
             ])
             ->contain(['ProductMasters'])
             ->all()
@@ -199,9 +126,9 @@ class ReservationsController extends AppController
         $total = 0;
 
         foreach ($items as $it) {
-            $pid = (int)$it['product_id'];
-            $p = $products[$pid] ?? null;  
-            if (!$p) continue;
+            $pid = (int)$it['product_id']; //items の各行について、DBから取った products に存在するか確認
+            $p = $products[$pid] ?? null; 
+            if (!$p) continue; //無いなら（不正なIDなど）スキップ
             $lineTotal = $p->price * (int)$it['quantity'];
             $total += $lineTotal;
 
@@ -214,7 +141,7 @@ class ReservationsController extends AppController
             ];
         }
 
-        if (empty($lines)) {
+        if (empty($lines)) { //lines が空なら不正として戻す
             $this->Flash->error('選択商品が不正です。');
             return $this->redirect(['controller' => 'BusinessDays', 'action' => 'view', $businessDayId]);
         }
@@ -279,7 +206,7 @@ class ReservationsController extends AppController
                 $already = $reservedMap[$pid] ?? 0;
                 if ($already + $reqQty > (int)$p->max_quantity) {
                     $remain = max(0, (int)$p->max_quantity - $already);
-                    $this->Flash->error('申し訳ございません。予約数量の上限を超えています。：' . $p->product_master->name . '（残り ' . $remain . '）');
+                    $this->Flash->error('申し訳ございません。' . $p->product_master->name . 'の予約枠は残り ' . $remain . 'ケです。');
                     return $this->redirect(['controller' => 'BusinessDays', 'action' => 'view', $businessDayId]);
                 }
             }
@@ -295,9 +222,6 @@ class ReservationsController extends AppController
             if (!$p) continue;
 
             $q = (int)$it['quantity'];
-
-            // ★ ここにあった「1回の注文内チェック」は不要（合算チェックに置き換え済み）
-            // if ($p->max_quantity !== null && $q > (int)$p->max_quantity) ...
 
             $lineTotal = $p->price * $q;
             $total += $lineTotal;
@@ -389,7 +313,4 @@ class ReservationsController extends AppController
 
         return null;
     }
-
-
-
 }

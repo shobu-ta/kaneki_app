@@ -69,7 +69,7 @@ foreach ($businessDay->products as $p) {
                   <div class="text-muted small">
                     <?= number_format((int)$p->price) ?>円
                     <?php if ($p->max_quantity !== null): ?>
-                      ・上限 <?= (int)$p->max_quantity ?>
+                      ・限定 <?= (int)$p->max_quantity ?>
                     <?php endif; ?>
                   </div>
                 </div>

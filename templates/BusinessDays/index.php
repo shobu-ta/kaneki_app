@@ -67,11 +67,8 @@ $now = new \DateTimeImmutable();
                   <li class="mb-1">
                     <span class="fw-semibold">
                       <?= h($product->product_master->name ?? '商品名なし') ?>
+                    </span>                 
                     
-                    
-                    <?php if ($product->max_quantity !== null): ?>
-                      <span class="text-muted">(上限 <?= (int)$product->max_quantity ?>)</span>
-                    <?php endif; ?>
                   </li>
                 <?php endforeach; ?>
               </ul>
