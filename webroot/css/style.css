@@ -34,3 +34,8 @@
   border-color: #3498db;
   color: #0b3d62;
 }
+
+.badge-instagram{
+  background-color: #E1306C; /* Instagramっぽいピンク */
+  color: #fff !important;    /* 文字を必ず白に */
+}

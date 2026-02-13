@@ -17,20 +17,38 @@ for ($m = 1; $m <= 12; $m++) {
 // バッジ用
 $statusBadge = function ($status) {
     $status = (string)$status;
-    return match ($status) {
-        'reserved' => 'text-bg-success',
-        'cancelled' => 'text-bg-secondary',
-        default => 'text-bg-info',
-    };
+    switch ($status) {
+        case 'reserved':
+            return 'text-bg-success';
+        case 'canceled':
+            return 'text-bg-secondary';
+        default:
+            return 'text-bg-info';
+    }
+};
+
+$statusLabel = function ($status) {
+    $status = (string)$status;
+    switch ($status) {
+        case 'reserved':
+            return '予約完了';
+        case 'canceled':
+            return 'キャンセル';
+        default:
+            return $status;
+    }
 };
 
 $sourceBadge = function ($source) {
     $source = strtolower((string)$source);
-    return match ($source) {
-        'instagram' => 'text-bg-warning',
-        'web' => 'text-bg-primary',
-        default => 'text-bg-dark',
-    };
+    switch ($source) {
+        case 'instagram':
+            return 'badge-instagram';
+        case 'web':
+            return 'text-bg-primary';
+        default:
+            return 'text-bg-dark';
+    }
 };
 ?>
 
@@ -139,7 +157,7 @@ $sourceBadge = function ($source) {
 
           <td>
             <span class="badge <?= h($statusBadge($r->status)) ?>">
-              <?= h($r->status) ?>
+              <?= h($statusLabel($r->status)) ?>
             </span>
           </td>
 
@@ -149,7 +167,7 @@ $sourceBadge = function ($source) {
 
           <td>
             <?php if ($hasNote): ?>
-              <span class="badge text-bg-warning">有</span>
+              <span class="badge text-bg-danger">有</span>
             <?php else: ?>
               <span class="badge text-bg-secondary">無</span>
             <?php endif; ?>
