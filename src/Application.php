@@ -128,13 +128,14 @@ class Application extends BaseApplication
 
    public function getAuthenticationService(ServerRequestInterface $request): AuthenticationServiceInterface
 {
-    $path = $request->getUri()->getPath();
+    $params = (array)$request->getAttribute('params', []);
 
-    // /kaneki/admin/... のようにサブディレクトリの場合もあるので「/admin」を含むかで判定
-    $isAdmin = (strpos($path, '/admin') !== false);
+    $isAdmin = (($params['prefix'] ?? null) === 'Admin');
+    $isPluginRequest = !empty($params['plugin']); // DebugKitなど
 
     $service = new AuthenticationService([
-        'unauthenticatedRedirect' => $isAdmin
+        // ✅ Admin かつ pluginじゃない時だけログインへ飛ばす
+        'unauthenticatedRedirect' => ($isAdmin && !$isPluginRequest)
             ? Router::url(['prefix' => 'Admin', 'controller' => 'Admins', 'action' => 'login'])
             : null,
         'queryParam' => 'redirect',
@@ -147,7 +148,8 @@ class Application extends BaseApplication
             'username' => 'email',
             'password' => 'password',
         ],
-        'loginUrl' => Router::url(['prefix' => 'Admin', 'controller' => 'Admins', 'action' => 'login']),
+        // ✅ loginUrlも普通に
+        'loginUrl' => ['prefix' => 'Admin', 'controller' => 'Admins', 'action' => 'login'],
         'identifier' => [
             'Authentication.Password' => [
                 'fields' => [
@@ -164,6 +166,8 @@ class Application extends BaseApplication
 
     return $service;
 }
+
+
 
 
 
